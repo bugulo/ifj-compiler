@@ -1,0 +1,18 @@
+image: gcc
+
+test:
+  stage: test
+  script:
+    - make test && ./test
+
+build:
+  stage: build
+  script:
+    - make
+
+release:
+  only:
+    - tags
+  stage: deploy
+  script:
+    - make pack
