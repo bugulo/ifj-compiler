@@ -5,12 +5,13 @@
 // Michal Slesar, xslesa01
 // Erik Belko, xbelko02
 
-
+#include <stdio.h>
+#include <assert.h>
+#include <stdbool.h>
 
 #include "dataTypes.h"
 #include "symtable.h"
-#include <stdio.h>
-#include <assert.h>
+#include "string.h"
 #include "test.h"
 
 //global variables
@@ -22,7 +23,6 @@ int failedCnt = 0;
 int data1;
 int data2[5];
 int data3[5];
-
 
 int main(){
     //koncept ako bude prebiehat test
@@ -39,6 +39,33 @@ int main(){
     beginTest("Test zhody poli");
     ASSERT_EQ_ARR(data2, data3, 5);
 
+    beginTest("String init");
+    string string1;
+    ASSERT_EQ(string_init(&string1), true);
+
+    beginTest("String push & compare");
+    string_append(&string1, "a");
+    string_append(&string1, "a");
+    ASSERT_EQ((int) string1.length, 2);
+    ASSERT_EQ((int) string1.size, (int) STRING_BLOCK_SIZE);
+    ASSERT_EQ(string_compare(&string1, "aa"), true);
+    string_append(&string1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    ASSERT_EQ((int) string1.length, 35);
+    ASSERT_EQ((int) string1.size, (int) (STRING_BLOCK_SIZE * 2));
+    ASSERT_EQ(string_compare(&string1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), true);
+    string_append(&string1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    ASSERT_EQ((int) string1.length, 68);
+    ASSERT_EQ((int) string1.size, (int) (STRING_BLOCK_SIZE * 3));
+    ASSERT_EQ(string_compare(&string1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), true);
+
+    beginTest("String clear");
+    ASSERT_EQ(string_clear(&string1), true);
+    ASSERT_EQ((int) string1.length, 0);
+
+    beginTest("String free");
+    ASSERT_EQ(string_free(&string1), true);
+    ASSERT_EQ((int) string1.length, 0);
+    ASSERT_EQ((int) string1.size, 0);
 
     endTests();
     return 0;

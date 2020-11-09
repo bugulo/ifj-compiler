@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 
+#include "string.h"
+
 typedef enum {
     KEYWORD_PACKAGE,
     KEYWORD_FUNC,
@@ -62,8 +64,8 @@ typedef enum {
 
 typedef union {
     int i;
-    char* s;
     double d;
+    string s;
     KeywordType k;
 } TokenValue;
 
