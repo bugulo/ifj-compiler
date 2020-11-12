@@ -42,32 +42,32 @@ int main(){
     ASSERT_EQ_ARR(data2, data3, 5);
 
     beginTest("String init");
-    string string1;
-    ASSERT_EQ(string_init(&string1), true);
+    String string;
+    ASSERT_EQ(string_init(&string), true);
 
     beginTest("String push & compare");
-    string_append(&string1, "a");
-    string_append(&string1, "a");
-    ASSERT_EQ((int) string1.length, 2);
-    ASSERT_EQ((int) string1.size, (int) STRING_BLOCK_SIZE);
-    ASSERT_EQ(string_compare(&string1, "aa"), true);
-    string_append(&string1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    ASSERT_EQ((int) string1.length, 35);
-    ASSERT_EQ((int) string1.size, (int) (STRING_BLOCK_SIZE * 2));
-    ASSERT_EQ(string_compare(&string1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), true);
-    string_append(&string1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    ASSERT_EQ((int) string1.length, 68);
-    ASSERT_EQ((int) string1.size, (int) (STRING_BLOCK_SIZE * 3));
-    ASSERT_EQ(string_compare(&string1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), true);
+    string_append_char(&string, 'a');
+    string_append_string(&string, "a");
+    ASSERT_EQ((int) string.length, 2);
+    ASSERT_EQ((int) string.size, (int) STRING_BLOCK_SIZE);
+    ASSERT_EQ(string_compare(&string, "aa"), true);
+    string_append_string(&string, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    ASSERT_EQ((int) string.length, 35);
+    ASSERT_EQ((int) string.size, (int) (STRING_BLOCK_SIZE * 2));
+    ASSERT_EQ(string_compare(&string, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), true);
+    string_append_string(&string, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    ASSERT_EQ((int) string.length, 68);
+    ASSERT_EQ((int) string.size, (int) (STRING_BLOCK_SIZE * 3));
+    ASSERT_EQ(string_compare(&string, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), true);
 
     beginTest("String clear");
-    ASSERT_EQ(string_clear(&string1), true);
-    ASSERT_EQ((int) string1.length, 0);
+    ASSERT_EQ(string_clear(&string), true);
+    ASSERT_EQ((int) string.length, 0);
 
     beginTest("String free");
-    ASSERT_EQ(string_free(&string1), true);
-    ASSERT_EQ((int) string1.length, 0);
-    ASSERT_EQ((int) string1.size, 0);
+    ASSERT_EQ(string_free(&string), true);
+    ASSERT_EQ((int) string.length, 0);
+    ASSERT_EQ((int) string.size, 0);
 
     endTests();
     return 0;

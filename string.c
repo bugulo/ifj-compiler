@@ -1,10 +1,15 @@
+/* IFJ20 - String Library
+ * Authors:
+ * Michal Slesar, xslesa01
+ */
+
 #include "string.h"
 
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
 
-bool string_init(string *string) {
+bool string_init(String *string) {
     string->ptr = malloc(STRING_BLOCK_SIZE);
 
     if(string->ptr == NULL)
@@ -17,7 +22,7 @@ bool string_init(string *string) {
     return true;
 }
 
-bool string_free(string *string) {
+bool string_free(String *string) {
     if(string->ptr == NULL)
         return false;
 
@@ -28,7 +33,7 @@ bool string_free(string *string) {
     return true;
 }
 
-bool string_clear(string *string) {
+bool string_clear(String *string) {
     if(string->ptr == NULL)
         return false;
 
@@ -37,7 +42,7 @@ bool string_clear(string *string) {
     return true;
 }
 
-bool string_append(string *string, const char *source) {
+bool string_append_string(String *string, const char *source) {
     if(string->ptr == NULL || source == NULL)
         return false;
 
@@ -64,6 +69,30 @@ bool string_append(string *string, const char *source) {
     return true;
 }
 
-bool string_compare(string *string1, const char *string2) {
+bool string_append_char(String *string, char c) {
+    if(string->ptr == NULL)
+        return false;
+
+    /** We need to allocate more blocks if needed */
+    if(string->length + 1 >= string->size) {
+        size_t new_size = string->size + STRING_BLOCK_SIZE;
+        string->ptr = realloc(string->ptr, new_size);
+
+        if(string->ptr == NULL) {
+            string->length = 0;
+            string->size = 0;
+            return false;
+        }
+
+        string->size = new_size;
+    }
+
+    string->ptr[string->length] = c;
+    string->length++;
+    string->ptr[string->length] = '\0';
+    return true;
+}
+
+bool string_compare(String *string1, const char *string2) {
     return strcmp(string1->ptr, string2) == 0;
 }

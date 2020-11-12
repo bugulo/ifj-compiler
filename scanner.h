@@ -11,6 +11,13 @@
 #include "string.h"
 
 typedef enum {
+    RESULT_NONE,
+    RESULT_OK,
+    RESULT_ERROR
+} Result;
+
+typedef enum {
+    KEYWORD_NONE,
     KEYWORD_PACKAGE,
     KEYWORD_FUNC,
     KEYWORD_RETURN,
@@ -23,6 +30,8 @@ typedef enum {
 } KeywordType;
 
 typedef enum {
+    TOKEN_NONE,             // Default
+
     TOKEN_EOF,              // End of file
     TOKEN_EOL,              // End of line
 
@@ -65,7 +74,7 @@ typedef enum {
 typedef union {
     int i;
     double d;
-    string s;
+    String s;
     KeywordType k;
 } TokenValue;
 
@@ -79,7 +88,7 @@ typedef struct {
  * 
  * @param file File pointer
  */
-void set_file(FILE *file);
+void scanner_set_file(FILE *file);
 
 /**
  * Parse and retrieve token
@@ -88,6 +97,6 @@ void set_file(FILE *file);
  * 
  * @return Error code
  */
-int get_token(Token *token);
+Result scanner_get_token(Token *token);
 
 #endif
