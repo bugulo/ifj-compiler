@@ -6,22 +6,20 @@
 // Erik Belko, xbelko02
 
 #include <stdio.h>
+
 #include "symtable.h"
 #include "dataTypes.h"
 #include "error.h"
+#include "scanner.h"
+#include "string.h"
 
 int main()
 {
-#ifdef DEBUG
-    print("%s", "debug_print z mainu\n");
-    throw_error_fatal(LEXICAL_ERROR, "%s", "uhoh");
-#endif
-
     scanner_set_file(stdin);
 
     while(1) {
         Token token;
-        int result = scanner_get_token(&token);
+        Result result = scanner_get_token(&token);
 
         if(result == RESULT_ERROR) {
             printf("Lexical error\n");

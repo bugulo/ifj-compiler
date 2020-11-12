@@ -14,7 +14,7 @@ CFLAGS += $(DEBUG)
 all: compiler
 
 compiler: $(MODULES) compiler.o     
-	$(CC) $(CFLAGS) -o $@ compiler.o 
+	$(CC) $(CFLAGS) -o $@ $(MODULES) compiler.o 
 
 #moduls (ADD new modules here)
 
