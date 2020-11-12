@@ -7,7 +7,7 @@
 
 CC = gcc
 CFLAGS = -g -std=c99 -pedantic -Wall -Wextra
-MODULES = symtable.o string.o scanner.o   #   <----- aj tuto pridavajte moduly
+MODULES = symtable.o string.o scanner.o error.o   #   <----- aj tuto pridavajte moduly
 
 CFLAGS += $(DEBUG)
 
@@ -28,6 +28,9 @@ string.o: string.c
 	$(CC) $(CFLAGS) -o $@ -c $^
 
 scanner.o: scanner.c
+	$(CC) $(CFLAGS) -o $@ -c $^
+	
+error.o: error.c
 	$(CC) $(CFLAGS) -o $@ -c $^
 
 ###############################
