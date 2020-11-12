@@ -229,7 +229,7 @@ Result scanner_get_token(Token *token) {
                     result = RESULT_ERROR;
             } else {
                 int number;
-                if(string_to_integer(string, &number)) {
+                if((string.ptr[0] != '0' || string_compare(&string, "0")) && string_to_integer(string, &number)) {
                     token->type = TOKEN_NUMBER_INT;
                     token->value.i = number;
                     result = RESULT_OK;
