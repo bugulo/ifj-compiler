@@ -10,6 +10,6 @@
 #include "dataTypes.h"
 
 int main(int argc, char **argv){
-    placeHolder(10);
+    
     return 0;
 }

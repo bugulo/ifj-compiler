@@ -25,15 +25,17 @@ int data2[5];
 int data3[5];
 
 int main(){
-    //koncept ako bude prebiehat test
+    //Tests for symTable
+    beginTest("Zakladny test na vkladanie a hladanie v symtable");
+    htab_t *table = htab_init(20);
+    char data[] = "test1";
+    htab_lookup_add(table, data);
+    htab_iterator_t tmp = htab_find(table, data);
+    ASSERT_EQ_ARR(tmp.ptr->name, data, sizeof(data));
+    tmp = htab_find(table, "test");
+    ASSERT_EQ(tmp.ptr, NULL);
+    htab_free(table);
 
-    //test 1
-    beginTest("Test funkcie placeHolder, ci naozaj holdujePlacer");
-    ASSERT_EQ(placeHolder(data1), 320);
-
-    //test 2
-    beginTest("Test funkcie placeHolder, ci  neholdujePlacer");
-    ASSERT_EQ(placeHolder(data1), 420);
 
     //test 3
     beginTest("Test zhody poli");
