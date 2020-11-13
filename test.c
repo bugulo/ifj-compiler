@@ -13,6 +13,7 @@
 #include "symtable.h"
 #include "string.h"
 #include "test.h"
+#include "stack.h"
 
 //global variables
 int totalCnt = 0;
@@ -31,7 +32,7 @@ int main(){
     char data[] = "test1";
     htab_lookup_add(table, data);
     htab_iterator_t tmp = htab_find(table, data);
-    ASSERT_EQ_ARR(tmp.ptr->name, data, sizeof(data));
+    ASSERT_EQ_ARR(tmp.ptr->name, data, (int)sizeof(data));
     tmp = htab_find(table, "test");
     ASSERT_EQ(tmp.ptr, NULL);
     htab_free(table);
@@ -69,6 +70,42 @@ int main(){
     ASSERT_EQ((int) string.length, 0);
     ASSERT_EQ((int) string.size, 0);
 
+    beginTest("Stack testing");
+    Stack *tmpStack = stackInit();
+    Token test1;
+    test1.type = TOKEN_COMA;
+    ASSERT_EQ(stackIsEmpty(tmpStack), true);
+    stackPush(tmpStack, test1);
+    ASSERT_EQ(stackIsEmpty(tmpStack), false);
+    ASSERT_EQ(stackPeek(tmpStack).type, TOKEN_COMA);
+    ASSERT_EQ(stackPop(tmpStack).type, TOKEN_COMA);
+    stackFree(tmpStack);
+
+    beginTest("Advanced stack testing");
+    tmpStack = stackInit();
+    Token test2;
+    test2.type = TOKEN_DECLARATION;
+
+    ASSERT_EQ(stackIsEmpty(tmpStack), true);
+    for(int i = 0; i < 22; i++){
+        if(i % 2 == 0){
+            stackPush(tmpStack, test1);
+        }
+        else stackPush(tmpStack, test2);
+    }
+
+    for(int i = 21; i >= 0; i--){
+        if(i % 2 == 0){
+            ASSERT_EQ(stackPop(tmpStack).type, TOKEN_COMA);
+        }
+        else ASSERT_EQ(stackPop(tmpStack).type, TOKEN_DECLARATION);
+    }
+    
+    
+
+    ASSERT_EQ(stackIsEmpty(tmpStack), true);
+
+    stackFree(tmpStack);
     endTests();
     return 0;
 }
@@ -98,4 +135,5 @@ void testData(){
     data3[2] = 5;
     data3[3] = 3;
     data3[4] = 4;
+    
 }
