@@ -14,24 +14,24 @@ CFLAGS += $(DEBUG)
 all: compiler
 
 compiler: $(MODULES) compiler.o     
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $(MODULES) compiler.o
 
 #moduls (ADD new modules here)
 
 symtable.o: symtable.c
-	$(CC) $(CFLAGS) -o $@ -c $^
+	$(CC) $(CFLAGS) -o $@ -c symtable.c
 
 compiler.o: compiler.c
-	$(CC) $(CFLAGS) -o $@ -c $^
+	$(CC) $(CFLAGS) -o $@ -c compiler.c
 
 string.o: string.c
-	$(CC) $(CFLAGS) -o $@ -c $^
+	$(CC) $(CFLAGS) -o $@ -c string.c
 
 scanner.o: scanner.c
-	$(CC) $(CFLAGS) -o $@ -c $^
+	$(CC) $(CFLAGS) -o $@ -c scanner.c
 	
 error.o: error.c
-	$(CC) $(CFLAGS) -o $@ -c $^
+	$(CC) $(CFLAGS) -o $@ -c error.c
 
 ###############################
 
