@@ -7,7 +7,7 @@
 
 CC = gcc
 CFLAGS = -g -std=c99 -pedantic -Wall -Wextra
-MODULES = symtable.o string.o scanner.o error.o stack.o  #   <----- aj tuto pridavajte moduly
+MODULES = symtable.o string.o scanner.o error.o stack.o vector.o #   <----- aj tuto pridavajte moduly
 
 CFLAGS += $(DEBUG)
 
@@ -16,7 +16,7 @@ all: compiler
 compiler: $(MODULES) compiler.o     
 	$(CC) $(CFLAGS) -o $@ $(MODULES) compiler.o
 
-#moduls (ADD new modules here)
+#modules (ADD new modules here)
 
 symtable.o: symtable.c
 	$(CC) $(CFLAGS) -o $@ -c symtable.c
@@ -35,6 +35,9 @@ error.o: error.c
 
 stack.o: stack.c
 	$(CC) $(CFLAGS) -o $@ -c stack.c
+
+vector.o: vector.c
+	$(CC) $(CFLAGS) -o $@ -c vector.c
 
 ###############################
 

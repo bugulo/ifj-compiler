@@ -4,13 +4,14 @@
  */
 
 #include "stack.h"
+#include "error.h"
 #include <stdlib.h>
 #define DEFAULT_STACK_SIZE 20
 
 Stack *stackInit(){
     Stack *tmp = malloc(sizeof(Stack));
     if(tmp == NULL){
-        //todo
+        throw_error_fatal(INTERNAL_ERROR, "%s", "Couldn't allocate memory!");
     }
     tmp->size = DEFAULT_STACK_SIZE;
     tmp->arrPtr = 0;
@@ -18,7 +19,7 @@ Stack *stackInit(){
     tmp->itemCnt = 0;
     tmp->arrPtr = malloc(sizeof(Token) * DEFAULT_STACK_SIZE);
     if(tmp->arrPtr == NULL){
-        //todo
+        throw_error_fatal(INTERNAL_ERROR, "%s", "Couldn't allocate memory!");
     }
     return tmp;
 }
