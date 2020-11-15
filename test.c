@@ -30,17 +30,13 @@ int main(){
     beginTest("Zakladny test na vkladanie a hladanie v symtable");
     htab_t *table = htab_init(20);
     char data[] = "test1";
-    htab_lookup_add(table, data);
+    htab_insert(table, data);
     htab_iterator_t tmp = htab_find(table, data);
     ASSERT_EQ_ARR(tmp.ptr->name, data, (int)sizeof(data));
     tmp = htab_find(table, "test");
     ASSERT_EQ(tmp.ptr, NULL);
     htab_free(table);
 
-
-    //test 3
-    beginTest("Test zhody poli");
-    ASSERT_EQ_ARR(data2, data3, 5);
 
     beginTest("String init");
     String string;

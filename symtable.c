@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "error.h"
 
 //tento modul bol definovany v zadani, str. 20
 
@@ -40,7 +41,7 @@ htab_t *htab_init(size_t n){
 
 size_t htab_size(const htab_t * t){
     if (t == NULL) {
-        //warning_msg("T nie je validny pointer");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return 0;
     }
     return t->size;
@@ -49,7 +50,7 @@ size_t htab_size(const htab_t * t){
 size_t htab_bucket_count(const htab_t * t){
     if (t == NULL) {
         if (t == NULL) {
-        //warning_msg("T nie je validny pointer");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return 0;
         }
     }
@@ -60,11 +61,11 @@ htab_iterator_t htab_find(htab_t * t, htab_key_t name){
     htab_iterator_t tmpIterator = {NULL, NULL, 0};
     //check if t is valid, if not return NULL iterator
     if(t == NULL){
-        //warning_msg("T nie je validny pointer");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return tmpIterator;
     }
     if(name == NULL){
-        //warning_msg("Key nie je validny pointer");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to name");
         return tmpIterator;
     }
     //get index from hash function
@@ -93,15 +94,15 @@ htab_iterator_t htab_find(htab_t * t, htab_key_t name){
     return htab_end(t);
 }
 
-htab_iterator_t htab_lookup_add(htab_t * t, htab_key_t name){
+htab_iterator_t htab_insert(htab_t * t, htab_key_t name){
     htab_iterator_t tmpIterator = {NULL, NULL, 0};
     //check if t is valid, if not return NULL iterator
     if(t == NULL){
-        //warning_msg("T nie je validny pointer");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return tmpIterator;
     }
     if(name == NULL){
-        //warning_msg("name nie je validny pointer");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to name");
         return tmpIterator;
     }
     //try to find item
@@ -121,14 +122,14 @@ htab_iterator_t htab_lookup_add(htab_t * t, htab_key_t name){
             //malloc new item
             tmpItem = malloc(sizeof(struct htab_item));
             if(tmpItem == NULL){
-                //error_exit("Dynamicka alokacia sa nepodarila");
+                throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation failed");
             }
             //setup new item
             tmpItem->next = NULL;
             //prepare string
             char * nameArr = malloc((strlen(name) * sizeof(char)) + 1);
             if(nameArr == NULL){
-                //error_exit("Dynamicka alokacia sa nepodarila");
+                throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation failed");
             }
             strcpy(nameArr, name);
             tmpItem->name = nameArr;
@@ -147,26 +148,30 @@ htab_iterator_t htab_lookup_add(htab_t * t, htab_key_t name){
         tmpIterator.idx = htab_hash_fun(name) % t->arr_size;
         //add size of list
         t->size += 1;
+        return tmpIterator;
     }
+    tmpIterator.ptr = NULL;
+    tmpIterator.t = NULL;
+    tmpIterator.idx = 0;
     return tmpIterator;
 }
 
 void htab_erase(htab_t * t, htab_iterator_t it){
     if(htab_iterator_valid(it) == false){
-        //warning_msg("Iterator nie je platny");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to name");
         return;
     }
     if(t != it.t) {
-        //warning_msg("Tabulky sa nezhoduju");
+        throw_error(INTERNAL_ERROR, "%s", "Iterator is from different table");
         return;
     }
     if(it.idx >= htab_bucket_count(t)){
-        //warning_msg("Iterator nie je validny");
+        throw_error(INTERNAL_ERROR, "%s", "Iterator is not valid");
         return;
     }
     struct htab_item *tmp = t->ptr[it.idx];
     if(tmp == NULL) {
-        //warning_msg("V zozname sa nenachdaza ziaden zaznam");
+        throw_error(INTERNAL_ERROR, "%s", "Table is empty");
         return;
     }
     //if first pointer is our pointer
@@ -200,7 +205,7 @@ htab_iterator_t htab_begin(const htab_t * t){
     htab_iterator_t tmp = {NULL, NULL, 0};
     //if t is null, return NULL iterator
     if(t == NULL){
-        //warning_msg("T nie je validny iterator");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return tmp;
     }
     //set iterator to end
@@ -222,7 +227,7 @@ htab_iterator_t htab_end(const htab_t * t){
     //set iterator to NULLS
     htab_iterator_t tmp = {NULL, NULL, 0};
     if(t == NULL){
-        //warning_msg("T nie je validny iterator");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return tmp;
     }
     //return ending iterator
@@ -257,7 +262,7 @@ htab_iterator_t htab_iterator_next(htab_iterator_t it){
 
 void htab_clear(htab_t * t){
     if(t == NULL){
-        //warning_msg("T nie je validny pointer");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return;
     }
     //loop through whole arr
@@ -295,7 +300,7 @@ void htab_clear(htab_t * t){
 
 void htab_free(htab_t * t){
     if(t == NULL){
-        //warning_msg("T nie je validny pointer");
+        throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return;
     }
     //first call clear

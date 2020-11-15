@@ -8,7 +8,8 @@
 
 #include <string.h>     // size_t
 #include <stdbool.h>    // bool
-#include "scanner.h" 
+#include "scanner.h"
+#include "vector.h"
 
 //table struct
 struct htab {
@@ -22,11 +23,22 @@ typedef struct htab htab_t;
 
 typedef const char * htab_key_t;
 
+typedef enum {
+    INTEGER,
+    FLOAT,
+    STRING,
+    NONE
+} dataType;
+
 //table item
 struct htab_item {
-    htab_key_t name; //symbol name
-    TokenType type;  //token type
-    struct htab_item *next; //pointer to next item
+    htab_key_t name;            //symbol name
+    TokenType tokenType;        //token type
+    dataType dataType;          //data type of variables
+    TokenValue variableValue;   //value of statically defined variable
+    Vector *returnTypes;        //return types from functions
+    bool UserDefinedVar;        //set to false when its compiler created variable
+    struct htab_item *next;     //pointer to next item
 };
 
 //item iterator
@@ -69,12 +81,12 @@ size_t htab_bucket_count(const htab_t * t);
 htab_iterator_t htab_find(htab_t * t, htab_key_t name);
 
 /**
- * @brief Function will add new symbol to table, if symbol already exist, it will return iterator
+ * @brief Function will insert new symbol to table, if symbol already exist, it will return empty iterator
  * @param Pointer to table
  * @param Name of symbol
  * @return Iterator to new, or existing item
 */
-htab_iterator_t htab_lookup_add(htab_t * t, htab_key_t name);
+htab_iterator_t htab_insert(htab_t * t, htab_key_t name);
 
 /**
  * @brief Erase symbol from table
