@@ -12,6 +12,7 @@
 #include <stdbool.h>
 
 #include "string.h"
+#include "error.h"
 
 FILE *source = NULL;
 
@@ -57,13 +58,13 @@ bool string_to_double(String string, double *number) {
     return *endptr == '\0';
 }
 
-Result scanner_get_token(Token *token) {
+void scanner_get_token(Token *token) {
     Result result = RESULT_NONE;
     State state = STATE_START;
     String string;
 
     if(source == NULL || !string_init(&string))
-        return RESULT_ERROR;
+        result = RESULT_ERROR;
 
     while(result == RESULT_NONE) {
         char c = getc(source);
@@ -204,12 +205,13 @@ Result scanner_get_token(Token *token) {
             }
         } else if(state == STATE_COMMENT_BLOCK) {
             char c1 = getc(source);
-            char c2 = getc(source);
 
-            if(c1 == '*' && c2 == '/')
+            if(c == '*' && c1 == '/')
                 state = STATE_START;
-            else if(c1 == EOF)
+            else if(c == EOF)
                 result = RESULT_ERROR;
+            else
+                ungetc(c1, source);
         } else if(state == STATE_INTEGER) {
             if(isdigit(c)) {
                 if(!string_append_char(&string, c))
@@ -313,12 +315,12 @@ Result scanner_get_token(Token *token) {
                         state = STATE_STRING;
                     else 
                         result = RESULT_ERROR;
-                } else if(c == 't') {
+                } else if(c1 == 't') {
                     if(string_append_char(&string, '\t'))
                         state = STATE_STRING;
                     else 
                         result = RESULT_ERROR;
-                } else if(c == 'x') {
+                } else if(c1 == 'x') {
                     char c2 = toupper(getc(source));
                     char c3 = toupper(getc(source));
 
@@ -331,7 +333,8 @@ Result scanner_get_token(Token *token) {
                             result = RESULT_ERROR;
                     } else
                         result = RESULT_ERROR;
-                }
+                } else 
+                    result = RESULT_ERROR;
             } else if(c == '"') {
                 if(string_init(&token->value.s) && string_append_string(&token->value.s, string.ptr)) {
                     token->type = TOKEN_STRING;
@@ -349,5 +352,6 @@ Result scanner_get_token(Token *token) {
     if(!string_free(&string))
         result = RESULT_ERROR;
 
-    return result;
+    if(result != RESULT_OK)
+        throw_error_fatal(LEXICAL_ERROR, "%s", "Lexical error");
 }
