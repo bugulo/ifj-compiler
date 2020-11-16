@@ -94,7 +94,9 @@ void scanner_set_file(FILE *file);
  * Parse and retrieve token
  * 
  * @param token Token pointer
+ * 
+ * @return Error code
  */
-void scanner_get_token(Token *token);
+Result scanner_get_token(Token *token);
 
 #endif
