@@ -9,12 +9,13 @@
 #include "symtable.h"
 #include "dataTypes.h"
 #include "error.h"
+#include "scanner.h"
+#include "expression.h"
+#include "vector.h"
+#include "symtable.h"
 
 int main(int argc, char **argv)
 {
-#ifdef DEBUG
-    print("%s", "debug_print z mainu\n");
-    throw_error_fatal(LEXICAL_ERROR, "%s", "uhoh");
-#endif
+
     return 0;
 }

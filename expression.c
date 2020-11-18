@@ -1,0 +1,485 @@
+/* IFJ20 - Precedence analysis
+ * Authors:
+ * Mario Harvan, xharva03
+ * Juraj Marticek, xmarti97
+ */
+
+#include "expression.h"
+#include "scanner.h"
+#include "error.h"
+#include "stdbool.h"
+#include "semantic_analysis.h"
+#include "string.h"
+
+int reduceTokenCount(Stack *stack)
+{
+    Stack *tmpStack = stackInit();
+    int tokenCount = 0;
+    Token tmpToken;
+    //count tokens before limiter
+    do
+    {
+        tmpToken = stackPop(stack);
+        if (tmpToken.type != TOKEN_DELIMITER)
+            tokenCount++;
+        if (tmpToken.type != TOKEN_NONE)
+            stackPush(tmpStack, tmpToken);
+    } while (tmpToken.type != TOKEN_DELIMITER && tmpToken.type != TOKEN_NONE);
+
+    if (tmpToken.type == TOKEN_NONE)
+    {
+        if (stackPeek(tmpStack).type == TOKEN_EXPRESSION)
+        {
+            stackFree(tmpStack);
+            stackPush(stack, tmpToken);
+            return ANALYSIS_DONE;
+        }
+        else
+        {
+            stackFree(tmpStack);
+            return REDUCE_ERROR;
+        }
+    }
+    //return tokens to stack
+    while (stackIsEmpty(tmpStack) == false)
+    {
+        stackPush(stack, stackPop(tmpStack));
+    }
+    stackFree(tmpStack);
+    return tokenCount;
+}
+
+Token semanticCheckFor3Op(Token operand1, Token operation, Token operand2, Vector *symtableVector)
+{
+    TokenValue emptyVal;
+    Token tmp;
+    tmp.type = TOKEN_EXPRESSION;
+    if (operand1.type == TOKEN_EXPRESSION && operand2.type == TOKEN_EXPRESSION)
+    {
+        varDataType varType = checkOperationTypes(symtableVector, operand1, operand2);
+        if (varType == NONE)
+            throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible data types in expression");
+        if (operation.type == TOKEN_DIV)
+        {
+            checkZeroDivision(getSymTableForVar(symtableVector, operand2.value.s.ptr), operand2.value.s.ptr);
+        }
+        //prepare var for result
+        String tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), varType, emptyVal, false);
+        tmp.value.s = tmpVarName;
+        return tmp;
+    }
+    else
+        throw_error_fatal(INTERNAL_ERROR, "%s", "Wrong token types in semantic checks");
+    return tmp;
+}
+
+void removeTokenAfterOp(Token token, Vector *symtableVector)
+{
+    if (token.type == TOKEN_EXPRESSION)
+    {
+        if (isVarUserDefined(getSymTableForVar(symtableVector, token.value.s.ptr), token.value.s.ptr) == false)
+        {
+            removeVar(getSymTableForVar(symtableVector, token.value.s.ptr), token.value.s.ptr);
+            free(token.value.s.ptr);
+        }
+        else
+        {
+            free(token.value.s.ptr);
+        }
+    }
+}
+
+void reduceRules1Op(Stack *stack, Token operand1, Vector *symtableVector)
+{
+    Token expressionToken;
+    expressionToken.type = TOKEN_EXPRESSION;
+    String tmpVarName;
+    switch (operand1.type)
+    {
+    case TOKEN_IDENTIFIER:;
+    #ifdef DEBUG
+        print("ID: %s", "E->i");
+    #endif
+        //check if variable is defined
+        htab_t *symTable = getSymTableForVar(symtableVector, operand1.value.s.ptr);
+        if (symTable != NULL)
+        {
+            if (isVarDefined(symTable, operand1.value.s.ptr) == true)
+            {
+                expressionToken.value.s = operand1.value.s;
+                stackPush(stack, expressionToken);
+            }
+            else
+                throw_error_fatal(DEFINITION_ERROR, "%s", "Variable is not defined");
+        }
+        else
+            throw_error_fatal(DEFINITION_ERROR, "%s", "Variable is not defined");
+        break;
+    case TOKEN_NUMBER_FLOAT:
+        #ifdef DEBUG
+            print("FLOAT: %s", "E->i");
+        #endif
+        tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), FLOAT, operand1.value, true);
+        expressionToken.value.s = tmpVarName;
+        //call code generator
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_NUMBER_INT:
+        #ifdef DEBUG
+            print("INT: %s", "E->i");
+        #endif
+        tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), INTEGER, operand1.value, true);
+        expressionToken.value.s = tmpVarName;
+        //call code generator
+        stackPush(stack, expressionToken);
+        break;
+    default:
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax error in expression");
+        break;
+    }
+    return;
+}
+
+void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand2, Vector *symtableVector)
+{
+    Token expressionToken;
+    expressionToken.type = TOKEN_EXPRESSION;
+    switch (operation.type)
+    {
+    case TOKEN_PLUS:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E+E");
+        #endif
+
+        //code generator
+
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_MINUS:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E-E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_MUL:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E*E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_DIV:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E/E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_EXPRESSION:
+        if (operand1.type == TOKEN_BRACKET_LEFT && operand2.type == TOKEN_BRACKET_RIGHT)
+        {
+        #ifdef DEBUG
+            print("%s", "E->(E)");
+        #endif
+            //check if variable is defined
+
+            //code generator
+            stackPush(stack, operation);
+        }
+        else
+        {
+            throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax error in expression");
+        }
+        break;
+
+    case TOKEN_GREATER:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E>E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_LESS:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E<E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_GREATER_EQ:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E>=E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+
+    case TOKEN_LESS_EQ:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E<=E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_EQUALS:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E==E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_NOT_EQUALS:
+        expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
+        #ifdef DEBUG
+            print("%s", "E->E!=E");
+        #endif
+
+        //code generator
+        removeTokenAfterOp(operand1, symtableVector);
+        removeTokenAfterOp(operand2, symtableVector);
+        stackPush(stack, expressionToken);
+        break;
+
+    default:
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Syntakticka chyba v precedencnej analyze");
+    }
+}
+
+void reduceByRule(Stack *stack, Vector *symtableVector)
+{
+    int reduceCount = reduceTokenCount(stack);
+
+    Token operand1;
+    Token operand2;
+    Token operation;
+
+    switch (reduceCount)
+    {
+    case 1:
+        operand1 = stackPop(stack);
+        if (stackPop(stack).type != TOKEN_DELIMITER)
+            throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax error in expression");
+        reduceRules1Op(stack, operand1, symtableVector);
+        break;
+    case 3:
+        operand2 = stackPop(stack);
+        operation = stackPop(stack);
+        operand1 = stackPop(stack);
+        if (stackPop(stack).type != TOKEN_DELIMITER)
+            throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax error in expression");
+        reduceRules3Op(stack, operand1, operation, operand2, symtableVector);
+        break;
+    case ANALYSIS_DONE:
+        return;
+        break;
+    default:
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax error in expression");
+    }
+    return;
+}
+
+expResult expression(Vector *symtableVector)
+{
+    Stack *stack = stackInit();
+
+    Token inputToken;
+    Token stackToken;
+
+    Token delimiterToken;
+    Token expressionToken;
+    Token tmpToken;
+
+    inputToken.type = TOKEN_NONE;
+    delimiterToken.type = TOKEN_DELIMITER;
+    expressionToken.type = TOKEN_EXPRESSION;
+
+    expResult result;
+    result.isFunc = false;
+
+    stackPush(stack, inputToken);
+    scanner_get_token(&inputToken);
+
+    //check for func
+    if (inputToken.type == TOKEN_IDENTIFIER)
+    {
+        if (isFuncDefined(getSymTableForFunc(symtableVector, inputToken.value.s.ptr), inputToken.value.s.ptr) == true)
+        {
+            result.isFunc = true;
+            result.newToken = inputToken;
+            return result;
+        }
+    }
+    while (stackPeek(stack).type != TOKEN_NONE || inputToken.type != TOKEN_NONE)
+    {
+        //detect end of expression
+        if (inputToken.type == TOKEN_EOL || inputToken.type == TOKEN_EOF)
+        {
+            result.newToken = inputToken;
+            inputToken.type = TOKEN_NONE;
+        }
+        stackToken = stackPeek(stack);
+        //special case of expression on top of stack
+        if (stackToken.type == TOKEN_EXPRESSION)
+        {
+            expressionToken = stackPop(stack);
+            stackToken = stackPeek(stack);
+            stackPush(stack, expressionToken);
+            //check for end of analysis
+            if (stackToken.type == TOKEN_NONE && inputToken.type == TOKEN_NONE)
+            {
+                result.result = expressionToken;
+                break;
+            }
+        }
+        switch (precedenceTable(stackToken, inputToken))
+        {
+        case PRECEDENCE_SHIFT:
+            if (stackPeek(stack).type == TOKEN_EXPRESSION)
+            {
+                tmpToken = stackPop(stack);
+                stackPush(stack, delimiterToken);
+                stackPush(stack, tmpToken);
+                stackPush(stack, inputToken);
+            }
+            else
+            {
+                stackPush(stack, delimiterToken);
+                stackPush(stack, inputToken);
+            }
+            scanner_get_token(&inputToken);
+            break;
+        case PRECEDENCE_REDUCE:
+            reduceByRule(stack, symtableVector);
+            break;
+        case PRECEDENCE_EQUAL:
+            stackPush(stack, inputToken);
+            scanner_get_token(&inputToken);
+            break;
+        case PRECEDENCE_NONE:
+            stackFree(stack);
+            throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax error in expression");
+            break;
+        }
+    }
+    stackFree(stack);
+    return result;
+}
+
+precedenceSigns precedenceTable(Token stackToken, Token inputToken)
+{
+    precedenceSigns table[14][14] = {
+        {'>', '>', '<', '<', '>', '>', '>', '>', '>', '>', '<', '>', '<', '>'},
+        {'>', '>', '<', '<', '>', '>', '>', '>', '>', '>', '<', '>', '<', '>'},
+        {'>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>', '<', '>'},
+        {'>', '>', '>', '>', '>', '>', '>', '>', '>', '>', '<', '>', '<', '>'},
+        {'<', '<', '<', '<',  63,  63,  63,  63,  63,  63, '<', '>', '<', '>'},
+        {'<', '<', '<', '<',  63,  63,  63,  63,  63,  63, '<', '>', '<', '>'},
+        {'<', '<', '<', '<',  63,  63,  63,  63,  63,  63, '<', '>', '<', '>'},
+        {'<', '<', '<', '<',  63,  63,  63,  63,  63,  63, '<', '>', '<', '>'},
+        {'<', '<', '<', '<',  63,  63,  63,  63,  63,  63, '<', '>', '<', '>'},
+        {'<', '<', '<', '<',  63,  63,  63,  63,  63,  63, '<', '>', '<', '>'},
+        {'<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '=', '<',  63},
+        {'>', '>', '>', '>', '>', '>', '>', '>', '>', '>',  63, '>',  63, '>'},
+        {'>', '>', '>', '>', '>', '>', '>', '>', '>', '>',  63, '>', '>', '>'},
+        {'<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<',  63, '<',  63},
+    };
+    precedenceTableIndex a_index = getPrecedenceTableIndex(stackToken);
+    precedenceTableIndex b_index = getPrecedenceTableIndex(inputToken);
+    if (a_index == 14 || b_index == 14)
+    {
+        return PRECEDENCE_NONE;
+    }
+    return table[a_index][b_index];
+}
+
+precedenceTableIndex getPrecedenceTableIndex(Token token)
+{
+    TokenType val = token.type;
+    switch (val)
+    {
+    case TOKEN_PLUS:
+        return 0;
+        break;
+    case TOKEN_MINUS:
+        return 1;
+        break;
+    case TOKEN_MUL:
+        return 2;
+        break;
+    case TOKEN_DIV:
+        return 3;
+        break;
+    case TOKEN_GREATER:
+        return 4;
+        break;
+    case TOKEN_LESS:
+        return 5;
+        break;
+    case TOKEN_LESS_EQ:
+        return 6;
+        break;
+    case TOKEN_GREATER_EQ:
+        return 7;
+        break;
+    case TOKEN_EQUALS:
+        return 8;
+        break;
+    case TOKEN_NOT_EQUALS:
+        return 9;
+        break;
+    case TOKEN_BRACKET_LEFT:
+        return 10;
+        break;
+    case TOKEN_BRACKET_RIGHT:
+        return 11;
+        break;
+    case TOKEN_IDENTIFIER:
+    case TOKEN_NUMBER_INT:
+    case TOKEN_NUMBER_FLOAT:
+        return 12;
+        break;
+    case TOKEN_NONE:
+        return 13;
+        break;
+    default:
+        throw_error(SYNTAX_ERROR, "Unexpected token in expression, token type: %d", val);
+        return 14;
+        break;
+    }
+}

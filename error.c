@@ -11,31 +11,31 @@ char *errTypeToString(ErrorTypes err_no)
 {
   switch (err_no)
   {
-  case 1:
+  case LEXICAL_ERROR:
     return "LEXICAL ERROR";
     break;
-  case 2:
+  case SYNTAX_ERROR:
     return "SYNTAX ERROR";
     break;
-  case 3:
+  case DEFINITION_ERROR:
     return "DEFINITION ERROR";
     break;
-  case 4:
+  case TYPE_DEFINITION_ERROR:
     return "TYPE DEFINITION ERROR";
     break;
-  case 5:
+  case INCOMPATIBLE_EXPRESSION_ERROR:
     return "INCOMPATIBLE EXPRESSION ERROR";
     break;
-  case 6:
+  case FUNCTION_DEFINITION_ERROR:
     return "FUNCTION DEFINITION ERROR";
     break;
-  case 7:
+  case OTHER_SEMANTIC_ERROR:
     return "SEMANTIC ERROR - OTHER";
     break;
-  case 9:
+  case ZERO_DIVISION_ERROR:
     return "DIVISION BY ZERO";
     break;
-  case 99:
+  case INTERNAL_ERROR:
     return "INTERNAL ERROR";
     break;
   default:

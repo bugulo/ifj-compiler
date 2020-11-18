@@ -68,7 +68,11 @@ typedef enum {
     // Literals
     TOKEN_NUMBER_INT,       // Integer number, 5465
     TOKEN_NUMBER_FLOAT,     // Floating point number, 0.45454
-    TOKEN_STRING            // String, "string"
+    TOKEN_STRING,           // String, "string"
+
+    // Special tokens for analysis
+    TOKEN_DELIMITER,        // Delimiter for precedence analysis
+    TOKEN_EXPRESSION        // Expression token for precedence analysis
 } TokenType;
 
 typedef union {

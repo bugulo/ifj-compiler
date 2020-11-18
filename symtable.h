@@ -27,17 +27,23 @@ typedef enum {
     INTEGER,
     FLOAT,
     STRING,
+    BOOL,
     NONE
-} dataType;
+} varDataType;
 
 //table item
 struct htab_item {
     htab_key_t name;            //symbol name
     TokenType tokenType;        //token type
-    dataType dataType;          //data type of variables
-    TokenValue variableValue;   //value of statically defined variable
+    //for variables
+    bool isVar;                 //true when its var, false if its func
+    varDataType varDataType;    //data type of variables
+    TokenValue varValue;        //value of statically defined variable
+    bool isVarUsedDefined;      //set to false when its compiler created variable
+    bool isConst;               //set to false if its not constant anymore
+    //for functions
     Vector *returnTypes;        //return types from functions
-    bool UserDefinedVar;        //set to false when its compiler created variable
+    
     struct htab_item *next;     //pointer to next item
 };
 

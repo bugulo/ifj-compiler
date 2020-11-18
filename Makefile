@@ -7,7 +7,7 @@
 
 CC = gcc
 CFLAGS = -g -std=c99 -pedantic -Wall -Wextra
-MODULES = symtable.o string.o scanner.o error.o stack.o vector.o #   <----- aj tuto pridavajte moduly
+MODULES = symtable.o string.o scanner.o error.o stack.o vector.o expression.o semantic_analysis.o#   <----- aj tuto pridavajte moduly
 
 CFLAGS += $(DEBUG)
 
@@ -38,6 +38,12 @@ stack.o: stack.c
 
 vector.o: vector.c
 	$(CC) $(CFLAGS) -o $@ -c vector.c
+
+expression.o: expression.c
+	$(CC) $(CFLAGS) -o $@ -c expression.c
+
+semantic_analysis.o: semantic_analysis.c
+	$(CC) $(CFLAGS) -o $@ -c semantic_analysis.c
 
 ###############################
 
