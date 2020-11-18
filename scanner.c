@@ -30,7 +30,8 @@ typedef enum {
     STATE_EXPONENT_SIGN,
     STATE_EXPONENT_START,
     STATE_EXPONENT,
-    STATE_STRING
+    STATE_STRING,
+    STATE_NEWLINE
 } State;
 
 KeywordType get_keyword_type(String string) {
@@ -71,8 +72,7 @@ void scanner_get_token(Token *token) {
 
         if(state == STATE_START) {
             if(c == '\n') {
-                token->type = TOKEN_EOL;
-                result = RESULT_OK;
+                state = STATE_NEWLINE;
             } else if(c == EOF) {
                 token->type = TOKEN_EOF;
                 result = RESULT_OK;
@@ -178,6 +178,12 @@ void scanner_get_token(Token *token) {
                 state = STATE_STRING;
             } else if(!isspace(c)) {
                 result = RESULT_ERROR;
+            }
+        } else if(state == STATE_NEWLINE) {
+            if(!isspace(c)) {
+                token->type = TOKEN_EOL;
+                result = RESULT_OK;
+                ungetc(c, source);
             }
         } else if(state == STATE_IDENTIFIER) {
             if(isalnum(c) || c == '_') {
