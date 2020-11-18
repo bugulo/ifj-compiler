@@ -13,9 +13,24 @@
 #include "error.h"
 
 void parser_main();
-void ruleProgram();
-void ruleBody();
-void ruleFuncN();
-void ruleFunc();
+Token getToken();
+bool ruleProgram();
+bool ruleBody();
+bool ruleFuncN();
+bool ruleFunc();
+//bool ruleParams();
+//bool ruleParamsN();
+//bool ruleType();
+//bool ruleRetTypes();
+//bool ruleRetTypesN();
+//bool ruleStList();
+//bool ruleStat();
+//bool ruleStatBody();
+//bool ruleAssign();
+//bool ruleIdN();
+//bool ruleExpressionN();
+//bool ruleReturn();
+//bool ruleReturnExp();
+//bool ruleExpression();
 
 #endif
