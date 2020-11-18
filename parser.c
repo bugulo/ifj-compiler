@@ -7,15 +7,41 @@
 #include "vector.h"
 #include "stack.h"
 
-Token getToken() {
-    Token actual_token;
-    scanner_get_token(&actual_token);
-    return actual_token;
-}
+Token token;
+Stack *stack;
+
+#define THROW_ERROR_SYNTAX()\
+    throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax analysis error!");
+
+#define PUSH()\
+    stackPush(stack, token);
+
+#define RETRIEVE_TOKEN()\
+    if(stackIsEmpty(stack)) scanner_get_token(&token); else token = stackPop(stack);
+
+#define GET_TOKEN_AND_COMPARE_ERROR(token_type)\
+    RETRIEVE_TOKEN();\
+    if(token.type != token_type) THROW_SYNTAX();
+
+#define GET_TOKEN_AND_COMPARE_RETURN(token_type)\
+    RETRIEVE_TOKEN();\
+    if(token.type != token_type) return;
 
 /*  1: <program> -> package id EOL <body> EOF   */
-bool ruleProgram() {
-    Token actual_token = getToken();
+void ruleProgram() {
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_KEYWORD);
+
+    if(token.value.k != KEYWORD_PACKAGE)
+        THROW_ERROR_SYNTAX();
+
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_IDENTIFIER);
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_EOL);
+
+    ruleBody();
+
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_EOF);
+
+    /*Token actual_token = getToken();
     if ((actual_token.type == TOKEN_KEYWORD) && (actual_token.value.k == KEYWORD_PACKAGE)) {
         actual_token = getToken();
         if ((actual_token.type == TOKEN_IDENTIFIER)) {
@@ -30,24 +56,32 @@ bool ruleProgram() {
             }
         }
     }
-    return false;
+    return false;*/
 }
 
 /*  2: <body> -> <func> <func_n>    */
-bool ruleBody() {
-    if (ruleFunc()) {
-        if(ruleFuncN()) 
-            return true;
-        else
-            return false;
-    }
-    return false;
+void ruleBody() {
+    ruleFunc();
+    ruleFuncN();
 }
 
 /*  3: <func_n> -> EOL <func> <func_n>
     4: <func_n> -> eps  */
-bool ruleFuncN() {
-    Token actual_token = getToken();
+void ruleFuncN() {
+    GET_TOKEN_AND_COMPARE_RETURN(TOKEN_EOL)
+
+    GET_TOKEN_AND_COMPARE_RETURN(TOKEN_KEYWORD)
+
+    if(token.value.k != KEYWORD_FUNC)
+        THROW_ERROR_SYNTAX();
+
+    PUSH();
+
+    ruleFunc();
+    ruleFuncN();
+
+
+    /*Token actual_token = getToken();
     if(actual_token.type == TOKEN_EOL) {
         actual_token = getToken();
         if ((actual_token.type == TOKEN_KEYWORD) && (actual_token.value.k == KEYWORD_FUNC)) {
@@ -63,40 +97,22 @@ bool ruleFuncN() {
         } else
             return true;
     } else
-        return true;
+        return true;*/
 }
 
 /*  5: <func> -> func id ( <params> ) <ret_types> { <st_list> } */
-bool ruleFunc() {
-    Token actual_token;
+void ruleFunc() {
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_KEYWORD);
 
-    if(!stackIsEmpty(stack))
-        actual_token = stackPop(stack);
-    else
-        actual_token = getToken();
+    if(token.value.k != KEYWORD_FUNC)
+        THROW_ERROR_SYNTAX();
 
-    if ((actual_token.type == TOKEN_KEYWORD) && (actual_token.value.k == KEYWORD_FUNC)) {
-        actual_token = getToken();
-        if (actual_token.type == TOKEN_IDENTIFIER) {
-            actual_token = getToken();
-            if (actual_token.type == TOKEN_BRACKET_LEFT) {
-                actual_token = getToken();
-                if (actual_token.type == TOKEN_BRACKET_RIGHT) {
-                    actual_token = getToken();
-                    if (actual_token.type == TOKEN_BRACE_LEFT) {
-                        actual_token = getToken();
-                        if (actual_token.type == TOKEN_EOL) {
-                            actual_token = getToken();
-                            if (actual_token.type == TOKEN_BRACE_RIGHT) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return false;
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_IDENTIFIER);
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACKET_LEFT);
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACKET_RIGHT);
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACE_LEFT);
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_EOL);
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACE_RIGHT);
 }
 
 /*  6: <params> -> id <type> <params_n>
@@ -137,10 +153,6 @@ bool ruleFunc() {
 void parser_main() {
     stack = stackInit();
 
-    if (ruleProgram()) {
-        printf("Syntax analysis good\n");
-    }
-    else {
-        throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax analysis error!");
-    }
+    ruleProgram();
+    printf("Syntax analysis good\n");
 }

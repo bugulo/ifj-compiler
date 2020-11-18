@@ -12,13 +12,10 @@
 #include <stdbool.h>
 #include "error.h"
 
-Stack *stack;
-
 void parser_main();
-Token getToken();
-bool ruleProgram();
-bool ruleBody();
-bool ruleFuncN();
-bool ruleFunc();
+void ruleProgram();
+void ruleBody();
+void ruleFuncN();
+void ruleFunc();
 
 #endif
