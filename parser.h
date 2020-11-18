@@ -13,24 +13,23 @@
 #include "error.h"
 
 void parser_main();
-Token getToken();
-bool ruleProgram();
-bool ruleBody();
-bool ruleFuncN();
-bool ruleFunc();
-//bool ruleParams();
-//bool ruleParamsN();
-//bool ruleType();
-//bool ruleRetTypes();
-//bool ruleRetTypesN();
-//bool ruleStList();
-//bool ruleStat();
-//bool ruleStatBody();
-//bool ruleAssign();
-//bool ruleIdN();
-//bool ruleExpressionN();
-//bool ruleReturn();
-//bool ruleReturnExp();
-//bool ruleExpression();
+void ruleProgram();
+void ruleBody();
+void ruleFuncN();
+void ruleFunc();
+//void ruleParams();
+//void ruleParamsN();
+//void ruleType();
+//void ruleRetTypes();
+//void ruleRetTypesN();
+//void ruleStList();
+//void ruleStat();
+//void ruleStatBody();
+//void ruleAssign();
+//void ruleIdN();
+//void ruleExpressionN();
+//void ruleReturn();
+//void ruleReturnExp();
+//void ruleExpression();
 
 #endif
