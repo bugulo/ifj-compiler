@@ -63,6 +63,11 @@ Token semanticCheckFor3Op(Token operand1, Token operation, Token operand2, Vecto
         {
             checkZeroDivision(getSymTableForVar(symtableVector, operand2.value.s.ptr), operand2.value.s.ptr);
         }
+        if (varType == STRING){
+            if (operation.type != TOKEN_PLUS){
+                throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Operation is not supported with string");
+            }
+        }
         //prepare var for result
         String tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), varType, emptyVal, false);
         tmp.value.s = tmpVarName;
@@ -129,6 +134,15 @@ void reduceRules1Op(Stack *stack, Token operand1, Vector *symtableVector)
             print("INT: %s", "E->i");
         #endif
         tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), INTEGER, operand1.value, true);
+        expressionToken.value.s = tmpVarName;
+        //call code generator
+        stackPush(stack, expressionToken);
+        break;
+    case TOKEN_STRING:
+        #ifdef DEBUG
+            print("STRING: %s", "E->i");
+        #endif
+        tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), STRING, operand1.value, true);
         expressionToken.value.s = tmpVarName;
         //call code generator
         stackPush(stack, expressionToken);
@@ -472,6 +486,7 @@ precedenceTableIndex getPrecedenceTableIndex(Token token)
     case TOKEN_IDENTIFIER:
     case TOKEN_NUMBER_INT:
     case TOKEN_NUMBER_FLOAT:
+    case TOKEN_STRING:
         return 12;
         break;
     case TOKEN_NONE:
