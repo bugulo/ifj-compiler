@@ -27,6 +27,7 @@ typedef struct{
     Token newToken; //newly read token from scanner
     Token result;   //Token with name of tmp var where intermediate result is stored
     bool isFunc;    //if true, expression was function, check always!
+    bool isEmpty;   //true when expression is empty
 } expResult;
 
 typedef unsigned char precedenceTableIndex;
@@ -34,6 +35,8 @@ typedef unsigned char precedenceTableIndex;
 precedenceTableIndex getPrecedenceTableIndex(Token token);
 
 precedenceSigns precedenceTable(Token stackToken, Token inputToken);
+
+bool isEndToken(Token token);
 
 /**
  * @brief Function counts how many tokens there are on stack before delimiter
@@ -89,7 +92,7 @@ void reduceByRule(Stack *stack, Vector *symtableVector);
  * @param Pointer to symbol tables vector
  * @return Returns result structure, which consists of newly read Token, token with result of expression, and special bool if expression was function call.
 */
-expResult expression(Vector *symtableVector);
+expResult expression(Vector *symtableVector, htab_t *funcTable);
 
 
 #endif

@@ -11,6 +11,19 @@
 #include "semantic_analysis.h"
 #include "string.h"
 
+bool isEndToken(Token token)
+{
+    if (token.type == TOKEN_EOL)
+        return true;
+    if (token.type == TOKEN_COMA)
+        return true;
+    if (token.type == TOKEN_SEMICOLON)
+        return true;
+    if (token.type == TOKEN_BRACE_LEFT)
+        return true;
+    return false;
+}
+
 int reduceTokenCount(Stack *stack)
 {
     Stack *tmpStack = stackInit();
@@ -328,7 +341,7 @@ void reduceByRule(Stack *stack, Vector *symtableVector)
     return;
 }
 
-expResult expression(Vector *symtableVector)
+expResult expression(Vector *symtableVector, htab_t *funcTable)
 {
     Stack *stack = stackInit();
 
@@ -345,6 +358,7 @@ expResult expression(Vector *symtableVector)
 
     expResult result;
     result.isFunc = false;
+    result.isEmpty = false;
 
     stackPush(stack, inputToken);
     scanner_get_token(&inputToken);
@@ -352,17 +366,24 @@ expResult expression(Vector *symtableVector)
     //check for func
     if (inputToken.type == TOKEN_IDENTIFIER)
     {
-        if (isFuncDefined(getSymTableForFunc(symtableVector, inputToken.value.s.ptr), inputToken.value.s.ptr) == true)
+        if (isFuncDefined(funcTable, inputToken.value.s.ptr) == true)
         {
             result.isFunc = true;
             result.newToken = inputToken;
             return result;
         }
     }
+    //check if expression is empty
+    if (isEndToken(inputToken) == true)
+    {
+        result.isEmpty = true;
+        result.newToken = inputToken;
+        return result;
+    }
     while (stackPeek(stack).type != TOKEN_NONE || inputToken.type != TOKEN_NONE)
     {
         //detect end of expression
-        if (inputToken.type == TOKEN_EOL || inputToken.type == TOKEN_EOF)
+        if (isEndToken(inputToken) == true)
         {
             result.newToken = inputToken;
             inputToken.type = TOKEN_NONE;

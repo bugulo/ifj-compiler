@@ -12,6 +12,8 @@
 #include "vector.h"
 #include "error.h"
 
+#define SYM_TABLE_SIZE 100
+
 /**
  * @brief Function checks if variable is defined
  * @param Pointer to table of symbols where variable should be defined
@@ -71,7 +73,6 @@ varDataType checkOperationTypes(Vector *tableVector, Token var1, Token var2);
 */
 String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue varValue, bool isConst);
 
-
 /**
  * @brief Function stores variable in symbol table
  * @param Pointer to table of symbols where variable should be defined
@@ -113,6 +114,38 @@ void removeVar(htab_t *symTable, htab_key_t name);
 htab_t *getSymTableForVar(Vector *tableVector, htab_key_t name);
 
 /**
+ * @brief Function will return local symbol table
+ * @param Pointer to vector with symbol tables
+ * @return NULL when vector is empty or pointer to local symbol table
+*/
+htab_t *getLocalSymTable(Vector *tableVector);
+
+/**
+ * @brief Function will add new symtable to top of vector
+ * @param Pointer to vector with symtables
+*/
+void insertLocalSymTable(Vector *tableVector);
+
+/**
+ * @brief Function will remove symtable from top of vector
+ * @param Pointer to vector with symtables
+*/
+void removeLocalSymTable(Vector *tableVector);
+
+/**
+ * @brief Function will add data type to vector
+ * @param Pointer to vector with dataTypes
+ * @param Type of variable
+*/
+void addFuncType(Vector *types, varDataType varType);
+
+/**
+ * @brief Function will remove all data types from vector
+ * @param Pointer to vector with dataTypes
+*/
+void removeFuncTypes(Vector *types);
+
+/**
  * @brief Function checks if funtion is defined
  * @param Pointer to table of symbols where function should be defined
  * @param Name of function
@@ -121,11 +154,35 @@ htab_t *getSymTableForVar(Vector *tableVector, htab_key_t name);
 bool isFuncDefined(htab_t* symTable, htab_key_t name);
 
 /**
- * @brief Function will find first symbol table where function is defined
- * @param Pointer to symbol table vector
- * @param Name of function
- * @return Pointer to symbol table where function is defined, or NULL when function is undefined
+ * @brief Function will compare two sets of parameters, throw error if they are different, or count is different
+ * @param Pointer to vector with first set of parameters
+ * @param Pointer to vector with second set of parameters
 */
-htab_t *getSymTableForFunc(Vector *tableVector, htab_key_t name);
+void checkFuncTypes(Vector *types1, Vector *types2);
+
+/**
+ * @brief Function will add new function to symbol table
+ * @param Pointer to function table
+ * @param Name of funtion
+ * @param Vector with types of func parameters
+ * @param Vector with return types from func
+ */
+void defineFunc(htab_t* symTable, htab_key_t name, Vector *paramTypes, Vector *returnTypes);
+
+/**
+ * @brief Function will return Function paramaters types
+ * @param Pointer to symbol table
+ * @param Name of function
+ * @return Vector with param types or NULL when function is not found
+*/
+Vector* getFuncParamTypes(htab_t* symTable, htab_key_t name);
+
+/**
+ * @brief Function will return Function return types
+ * @param Pointer to symbol table
+ * @param Name of function
+ * @return Vector with return types or NULL when function is not found
+*/
+Vector* getFuncReturnTypes(htab_t* symTable, htab_key_t name);
 
 #endif

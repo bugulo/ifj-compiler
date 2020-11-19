@@ -44,8 +44,8 @@ void vectorPush(Vector *vector, const void *item)
 }
 
 const void *vectorPop(Vector *vector) {
-    const void *item = vector->items[vector->length];
-    vector->items[vector->length--] = NULL;
+    const void *item = vector->items[--vector->length];
+    vector->items[vector->length] = NULL;
     return item;
 }
 

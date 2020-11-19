@@ -209,6 +209,32 @@ htab_t *getSymTableForVar(Vector *tableVector, htab_key_t name)
     return NULL;
 }
 
+htab_t *getLocalSymTable(Vector *tableVector){
+    if(tableVector != NULL){
+        if(vectorLength(tableVector) != 0){
+            return (htab_t *)vectorGet(tableVector,vectorLength(tableVector) - 1);
+        }
+    }
+    return NULL;
+}
+
+void insertLocalSymTable(Vector *tableVector){
+    if(tableVector != NULL){
+        htab_t *tmp = htab_init(SYM_TABLE_SIZE);
+        if(tmp == NULL) 
+            throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
+        vectorPush(tableVector, (void *) tmp);
+    }
+}
+
+void removeLocalSymTable(Vector *tableVector){
+    if(tableVector != NULL){
+        if(vectorLength(tableVector) != 0){
+            htab_free((htab_t *)vectorPop(tableVector));
+        }
+    }
+}
+
 bool isFuncDefined(htab_t *symTable, htab_key_t name)
 {
     if(symTable != NULL){
@@ -222,18 +248,72 @@ bool isFuncDefined(htab_t *symTable, htab_key_t name)
     return false;
 }
 
-htab_t *getSymTableForFunc(Vector *tableVector, htab_key_t name)
-{
-    htab_iterator_t tmp;
-    if(tableVector != NULL){
-        unsigned int vecLength = vectorLength(tableVector) - 1;
-        for (unsigned int i = 0; i <= vecLength; i++)
+void addFuncType(Vector *types, varDataType varType){
+    if(types != NULL){
+        varDataType *tmp = malloc(sizeof(varDataType));
+        if(tmp == NULL)
+            throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
+        *tmp = varType;
+        vectorPush(types, (void *) tmp);
+    }
+}
+
+void removeFuncTypes(Vector *types){
+    if(types != NULL){
+        while(vectorLength(types) != 0){
+            varDataType *tmp = (varDataType *) vectorPop(types);
+            free(tmp);
+        }
+    }
+}
+
+void checkFuncTypes(Vector *types1, Vector *types2){
+    if(types1 != NULL && types2 != NULL){
+        if(vectorLength(types1) == vectorLength(types2)){
+            for(int i = 0; i < vectorLength(types1); i++){
+                if(*(varDataType *)vectorGet(types1, i) != *(varDataType *)vectorGet(types2, i)){
+                    throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function");
+                }
+            }
+        }
+        else
         {
-            htab_t *tmpTable = (htab_t *)vectorGet(tableVector, vecLength - i);
-            tmp = htab_find(tmpTable, name);
-            if (tmp.ptr != NULL)
-                if(tmp.ptr->isVar == false)
-                    return (htab_t *)tmp.t;
+            throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect parameter count in function");
+        }
+    }
+}
+
+void defineFunc(htab_t* symTable, htab_key_t name, Vector *paramTypes, Vector *returnTypes){
+    if(symTable != NULL){
+        htab_iterator_t tmp = htab_insert(symTable, name);
+        if(tmp.ptr == NULL)
+            throw_error_fatal(DEFINITION_ERROR, "%s", "Function is already definded");
+        tmp.ptr->isConst = false;
+        tmp.ptr->isVar = false;
+        tmp.ptr->paramTypes = paramTypes;
+        tmp.ptr->returnTypes = returnTypes;
+    }
+}
+
+Vector* getFuncParamTypes(htab_t* symTable, htab_key_t name){
+    if(symTable != NULL){
+        if(isFuncDefined(symTable, name) == true){
+            htab_iterator_t tmp = htab_find(symTable, name);
+            if(tmp.ptr != NULL){
+                return tmp.ptr->paramTypes;
+            }
+        }
+    }
+    return NULL;
+}
+
+Vector* getFuncReturnTypes(htab_t* symTable, htab_key_t name){
+    if(symTable != NULL){
+        if(isFuncDefined(symTable, name) == true){
+            htab_iterator_t tmp = htab_find(symTable, name);
+            if(tmp.ptr != NULL){
+                return tmp.ptr->returnTypes;
+            }
         }
     }
     return NULL;

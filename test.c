@@ -14,6 +14,7 @@
 #include "string.h"
 #include "test.h"
 #include "stack.h"
+#include "semantic_analysis.h"
 
 //global variables
 int totalCnt = 0;
@@ -97,11 +98,19 @@ int main(){
         else ASSERT_EQ(stackPop(tmpStack).type, TOKEN_DECLARATION);
     }
     
-    
-
     ASSERT_EQ(stackIsEmpty(tmpStack), true);
 
     stackFree(tmpStack);
+
+    beginTest("Semantic analysis function test for VARIABLES");
+    htab_t *varTable = htab_init(50);
+    TokenValue emptyVal;
+    ASSERT_EQ(isVarDefined(varTable, "testNotConst"), false);
+    defineUserVar(varTable, "testNotConst", INTEGER, emptyVal, false);
+    ASSERT_EQ(isVarDefined(varTable, "testNotConst"), true);
+    ASSERT_EQ(isVarUserDefined(varTable, "testNotConst"), true);
+    ASSERT_EQ(isVarConst(varTable, "testNotConst"), false);
+
     endTests();
     return 0;
 }

@@ -42,7 +42,8 @@ struct htab_item {
     bool isVarUsedDefined;      //set to false when its compiler created variable
     bool isConst;               //set to false if its not constant anymore
     //for functions
-    Vector *returnTypes;        //return types from functions
+    Vector *returnTypes;        //return types from function
+    Vector *paramTypes;         //params for functions
     
     struct htab_item *next;     //pointer to next item
 };

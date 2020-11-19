@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "error.h"
+#include "semantic_analysis.h"
 
 //tento modul bol definovany v zadani, str. 20
 
@@ -126,6 +127,8 @@ htab_iterator_t htab_insert(htab_t * t, htab_key_t name){
             }
             //setup new item
             tmpItem->next = NULL;
+            tmpItem->returnTypes = NULL;
+            tmpItem->paramTypes = NULL;
             //prepare string
             char * nameArr = malloc((strlen(name) * sizeof(char)) + 1);
             if(nameArr == NULL){
@@ -179,6 +182,8 @@ void htab_erase(htab_t * t, htab_iterator_t it){
         //set first pointer to next list member
         t->ptr[it.idx] = it.ptr->next;
         //delete item
+        removeFuncTypes(it.ptr->paramTypes);
+        removeFuncTypes(it.ptr->returnTypes);
         free((char *)it.ptr->name);
         free(it.ptr);
         t->size -= 1;
@@ -191,6 +196,8 @@ void htab_erase(htab_t * t, htab_iterator_t it){
             //set tmp next, to deleted item next pointer
             tmp->next = it.ptr->next;
             //delete item
+            removeFuncTypes(it.ptr->paramTypes);
+            removeFuncTypes(it.ptr->returnTypes);
             free((char *)it.ptr->name);
             free(it.ptr);
             t->size -= 1;
@@ -273,6 +280,8 @@ void htab_clear(htab_t * t){
         while(t->ptr[i] != NULL){
             //if next item is NULL, free actual item
             if(tmpIteratorItem->next == NULL){
+                removeFuncTypes(tmpIteratorItem->paramTypes);
+                removeFuncTypes(tmpIteratorItem->returnTypes);
                 free((char * )tmpIteratorItem->name);
                 free(tmpIteratorItem);
                 //if its first item in list
