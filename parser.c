@@ -136,8 +136,8 @@ void ruleType(bool param) {
     }
 }
 
-/*  14: <ret_types> -> ( <type> <ret_types_n> )
-    15: <ret_types> -> eps */
+/*  13: <ret_types> -> ( <type> <ret_types_n> )
+    14: <ret_types> -> eps */
 void ruleRetTypes() {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_BRACKET_LEFT);
 
@@ -147,8 +147,8 @@ void ruleRetTypes() {
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACKET_RIGHT);
 }
 
-/*  16: <ret_types_n> -> , <type> <ret_types_n>
-    17: <ret_types_n> -> eps */
+/*  15: <ret_types_n> -> , <type> <ret_types_n>
+    16: <ret_types_n> -> eps */
 void ruleRetTypesN() {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_COMA);
 
@@ -156,8 +156,8 @@ void ruleRetTypesN() {
     ruleRetTypesN();
 }
 
-/*  18: <st_list> -> <stat> EOL <st_list>
-    19: <st_list> -> eps */
+/*  17: <st_list> -> <stat> EOL <st_list>
+    18: <st_list> -> eps */
 void ruleStList() {
     if(ruleStat()) {
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_EOL);
@@ -165,10 +165,10 @@ void ruleStList() {
     }
 }
 
-/*  20: <stat> -> id <stat_body>
+/*  19: <stat> -> id <stat_body>
     30: <stat> -> if <expression> { <st_list> } else { <st_list> }
-    31: <stat> -> for <stat> ; <expression> ; <stat> { <st_list> } -- ????????????????????? - nemoze byt cely <stat> 
-    32: <stat> -> return <return_exp> */
+    31: <stat> -> for <for_def> ; <expression> ; <for_assign> { <st_list> }
+    36: <stat> -> return <return_exp> */
 bool ruleStat() {
     RETRIEVE_TOKEN();
 
@@ -212,9 +212,9 @@ bool ruleStat() {
     }
 }
 
-/*  21: <stat_body> -> <id_n> = <assign>
-    24: <stat_body> -> := <expression>
-    25: <stat_body> -> ( <params> ) - ?????????????????????????? - NOVE */
+/*  20: <stat_body> -> <id_n> = <expression> <expression_n> ----------------toto je tu nove <assign> pravidla sa zrusili
+    21: <stat_body> -> := <expression>
+    22: <stat_body> -> ( <call_params> ) --------------------- nove pravidla, vyhodit v type eps */
 void ruleStatBody() {
     RETRIEVE_TOKEN();
 
@@ -227,15 +227,12 @@ void ruleStatBody() {
         PUSH();
         ruleIdN();
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_ASSIGNMENT);
-        ruleAssign();
-    }
-}
+        
+        //ruleAssign();
 
-/*  22: <assign> -> <expression> <expression_n>
-    23: <assign> -> id ( <params> ) - ????????????????????????????????????????????????? - riesi expression */
-void ruleAssign() {
-    ruleExp();
-    ruleExpN();
+        ruleExp();
+        ruleExpN();
+    }
 }
 
 /*  26: <id_n> -> , id <id_n>
@@ -254,20 +251,33 @@ void ruleExpN() {
     ruleExpN();
 }
 
-/*  33: <return_exp> -> <expression> <expression_n>
-    34: <return_exp> -> eps */
+/*  37: <return_exp> -> <expression> <expression_n>
+    38: <return_exp> -> eps */
 void ruleReturnExp() {
     ruleExp();
     ruleExpN(); // MAJO
 }
 
-/*  35: <expression> -> expression */
+/*  23: <call_params> -> id <id_n>
+    24: <call_params> -> <type> <ret_types_n>
+    25: <call_params> -> eps    */
+//void ruleCallParams()
+
+/*  32: <for_def> -> id := <expression>
+    33: <for_def> -> eps    */
+//void ruleForDef()
+
+/*  34: <for_assign> -> id := <expression>
+    35: <for_assign> -> eps */
+//void ruleForAssign()
+
+/*  39: <expression> -> expression ----------nezabudnut posielat isFunc a to ci sa nejedna o prazdny return */
 void ruleExp() {
     Vector *vector = vectorInit();
     htab_t *table = htab_init(1);
     vectorPush(vector, (void*) table);
 
-    expResult result = expression(vector);
+    expResult result = expression(vector, table);
     stackPush(stack, result.newToken);
 }
 

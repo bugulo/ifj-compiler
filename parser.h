@@ -29,6 +29,9 @@ void ruleAssign();
 void ruleIdN();
 void ruleExpN();
 void ruleReturnExp();
+//void ruleCallParams();
+//void ruleForDef();
+//void ruleForAssign();
 void ruleExp();
 
 #endif
