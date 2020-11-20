@@ -36,8 +36,10 @@ Stack *stack;
     if(token.type != token_type) { PUSH(); return; }
 
 #define OPTIONAL_EOL()\
-    RETRIEVE_TOKEN();\
-    if(token.type != TOKEN_EOL) PUSH();
+    while(true) {\
+        RETRIEVE_TOKEN();\
+        if(token.type != TOKEN_EOL) { PUSH(); break; }\
+    }
 
 /*  1: <program> -> package id EOL <body> EOF   */
 void ruleProgram() {
