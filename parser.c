@@ -5,10 +5,11 @@
  */
 
 #include "parser.h"
-#include "vector.h"
-#include "stack.h"
-#include "symtable.h"
-#include "expression.h"
+
+/*
+- MAJO STACK
+- EOL V PROLOGU
+*/
 
 Token token;
 Stack *stack;
@@ -40,28 +41,46 @@ Stack *stack;
 
 /*  1: <program> -> package id EOL <body> EOF   */
 void ruleProgram() {
+    htab_t *table = htab_init(10);
+
+    OPTIONAL_EOL();
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_KEYWORD);
 
     if(token.value.k != KEYWORD_PACKAGE)
         THROW_ERROR_SYNTAX();
 
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_IDENTIFIER);
+    if(!string_compare(&token.value.s, "main"))
+        throw_error_fatal(DEFINITION_ERROR, "%s", "Wrong package name");
+
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_EOL);
 
-    ruleBody();
+    ruleBody(table);
 
+    OPTIONAL_EOL();
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_EOF);
+
+    if(!isFuncDefined(table, "main"))
+        throw_error_fatal(DEFINITION_ERROR, "%s", "Missing function main");
+    else {
+        Vector *empty = vectorInit();
+        Vector *params = getFuncParamTypes(table, "main");
+        Vector *returns = getFuncReturnTypes(table, "main");
+
+        checkFuncTypes(params, empty);
+        checkFuncTypes(returns, empty);
+    }
 }
 
 /*  2: <body> -> <func> <func_n>    */
-void ruleBody() {
-    ruleFunc();
-    ruleFuncN();
+void ruleBody(htab_t *table) {
+    ruleFunc(table);
+    ruleFuncN(table);
 }
 
 /*  3: <func_n> -> EOL <func> <func_n>
     4: <func_n> -> eps  */
-void ruleFuncN() {
+void ruleFuncN(htab_t *table) {
     GET_TOKEN_AND_COMPARE_RETURN(TOKEN_EOL)
 
     GET_TOKEN_AND_COMPARE_RETURN(TOKEN_KEYWORD)
@@ -70,28 +89,33 @@ void ruleFuncN() {
         THROW_ERROR_SYNTAX();
 
     PUSH();
-    ruleFunc();
-    ruleFuncN();
+    ruleFunc(table);
+    ruleFuncN(table);
 }
 
 /*  5: <func> -> func id ( <params> ) <ret_types> { EOL <st_list> } */
-void ruleFunc() {
+void ruleFunc(htab_t *table) {
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_KEYWORD);
 
     if(token.value.k != KEYWORD_FUNC)
         THROW_ERROR_SYNTAX();
 
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_IDENTIFIER);
+
+    Vector *params = vectorInit();
+    Vector *returns = vectorInit();
+    defineFunc(table, token.value.s.ptr, params, returns);
+
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACKET_LEFT);
 
-    ruleParams();
+    ruleParams(params);
 
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACKET_RIGHT);
 
-    ruleRetTypes();
+    ruleRetTypes(returns);
 
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACE_LEFT);
-    //GET_TOKEN_AND_COMPARE_ERROR(TOKEN_EOL);
+    
     OPTIONAL_EOL();
 
     ruleStList();
@@ -101,35 +125,37 @@ void ruleFunc() {
 
 /*  6: <params> -> id <type> <params_n>
     7: <params> -> eps  */
-void ruleParams() {
+void ruleParams(Vector *params) {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_IDENTIFIER);
 
-    ruleType(true);
-    ruleParamsN();
+    ruleType(params);
+    ruleParamsN(params);
 }
 
 /*  8: <params_n> -> , id <type> <params_n>
     9: <params_n> -> eps */
-void ruleParamsN() {
+void ruleParamsN(Vector *params) {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_COMA);
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_IDENTIFIER);
 
-    ruleType(true);
-    ruleParamsN();
+    ruleType(params);
+    ruleParamsN(params);
 }
 
 /*  10: <type> -> int
     11: <type> -> float64
-    12: <type> -> string
-    13: <type> -> eps */
-void ruleType(bool param) {
-    if(param) {
-        GET_TOKEN_AND_COMPARE_ERROR(TOKEN_KEYWORD);
-    } else {
-        GET_TOKEN_AND_COMPARE_ERROR(TOKEN_KEYWORD);
-    }
+    12: <type> -> string */
+void ruleType(Vector *types) {
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_KEYWORD);
 
     if ((token.value.k == KEYWORD_INT) || (token.value.k == KEYWORD_FLOAT64) || (token.value.k == KEYWORD_STRING)) {
+        varDataType type;
+
+        if(token.value.k == KEYWORD_INT) { type = INTEGER; }
+        else if(token.value.k == KEYWORD_FLOAT64) { type = FLOAT; }
+        else if(token.value.k == KEYWORD_STRING) { type = STRING; }
+
+        addFuncType(types, type);
         return;
     } else {
         THROW_ERROR_SYNTAX();
@@ -138,22 +164,22 @@ void ruleType(bool param) {
 
 /*  13: <ret_types> -> ( <type> <ret_types_n> )
     14: <ret_types> -> eps */
-void ruleRetTypes() {
+void ruleRetTypes(Vector *returns) {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_BRACKET_LEFT);
 
-    ruleType(false);
-    ruleRetTypesN();
+    ruleType(returns);
+    ruleRetTypesN(returns);
 
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACKET_RIGHT);
 }
 
 /*  15: <ret_types_n> -> , <type> <ret_types_n>
     16: <ret_types_n> -> eps */
-void ruleRetTypesN() {
+void ruleRetTypesN(Vector *returns) {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_COMA);
 
-    ruleType(false);
-    ruleRetTypesN();
+    ruleType(returns);
+    ruleRetTypesN(returns);
 }
 
 /*  17: <st_list> -> <stat> EOL <st_list>
@@ -176,7 +202,7 @@ bool ruleStat() {
         ruleStatBody();
         return true;
     } else if(token.type == TOKEN_KEYWORD && token.value.k == KEYWORD_IF) {
-        //ruleExp(); -- MAJO
+        ruleExp(false, false);
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACE_LEFT);
         OPTIONAL_EOL();
         ruleStList();
@@ -193,11 +219,11 @@ bool ruleStat() {
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACE_RIGHT);
         return true;
     } else if(token.type == TOKEN_KEYWORD && token.value.k == KEYWORD_FOR) {
-        //ruleStat();
+        ruleForDef();
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_SEMICOLON);
-        //ruleExp(); -- MAJO
+        ruleExp(false, false);
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_SEMICOLON);
-        //ruleStat();
+        ruleForAssign();
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACE_LEFT);
         OPTIONAL_EOL();
         ruleStList();
@@ -212,25 +238,23 @@ bool ruleStat() {
     }
 }
 
-/*  20: <stat_body> -> <id_n> = <expression> <expression_n> ----------------toto je tu nove <assign> pravidla sa zrusili
+/*  20: <stat_body> -> <id_n> = <expression> <expression_n>
     21: <stat_body> -> := <expression>
-    22: <stat_body> -> ( <call_params> ) --------------------- nove pravidla, vyhodit v type eps */
+    22: <stat_body> -> ( <call_params> ) */
 void ruleStatBody() {
     RETRIEVE_TOKEN();
 
     if(token.type == TOKEN_DECLARATION) {
-        ruleExp();
+        ruleExp(false, false);
     } else if(token.type == TOKEN_BRACKET_LEFT) {
-        //NOVE PRAVIDLA
+        ruleCallParams();
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACKET_RIGHT);
     } else {
         PUSH();
         ruleIdN();
         GET_TOKEN_AND_COMPARE_ERROR(TOKEN_ASSIGNMENT);
-        
-        //ruleAssign();
 
-        ruleExp();
+        ruleExp(false, true);
         ruleExpN();
     }
 }
@@ -247,38 +271,96 @@ void ruleIdN() {
     29: <expression_n> -> eps */
 void ruleExpN() {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_COMA);
-    ruleExp();
+    ruleExp(false, false);
     ruleExpN();
 }
 
 /*  37: <return_exp> -> <expression> <expression_n>
     38: <return_exp> -> eps */
 void ruleReturnExp() {
-    ruleExp();
-    ruleExpN(); // MAJO
+    ruleExp(true, false);
+    ruleExpN();
 }
 
-/*  23: <call_params> -> id <id_n>
-    24: <call_params> -> <type> <ret_types_n>
-    25: <call_params> -> eps    */
-//void ruleCallParams()
+/*  23: <call_params> -> <values> <call_params_n>
+        <call_params> -> eps    */
+
+void ruleCallParams() {
+    if(ruleValues()) {
+        ruleCallParamsN();
+    } else {
+        PUSH();
+    }
+}
+
+/*  <call_params_n> -> , <values> <call_params_n>
+    <call_params_n> -> eps  */
+void ruleCallParamsN() {
+    GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_COMA);
+
+    if(ruleValues()) {
+        ruleCallParamsN();
+    } else {
+        PUSH();
+    }
+}
+
+/*  <values> -> value_int
+    <values> -> value_float
+    <values> -> value_string
+    <values> -> id  */
+bool ruleValues() {
+    RETRIEVE_TOKEN();
+
+    if(token.type != TOKEN_IDENTIFIER && token.type != TOKEN_NUMBER_FLOAT && token.type != TOKEN_NUMBER_INT && token.type != TOKEN_STRING)
+        return false;
+    else
+        return true;
+}
 
 /*  32: <for_def> -> id := <expression>
     33: <for_def> -> eps    */
-//void ruleForDef()
+void ruleForDef() {
+    GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_IDENTIFIER);
 
-/*  34: <for_assign> -> id := <expression>
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_DECLARATION);
+    ruleExp(false, false);
+}
+
+/*  34: <for_assign> -> id = <expression>
     35: <for_assign> -> eps */
-//void ruleForAssign()
+void ruleForAssign() {
+    GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_IDENTIFIER);
 
-/*  39: <expression> -> expression ----------nezabudnut posielat isFunc a to ci sa nejedna o prazdny return */
-void ruleExp() {
+    GET_TOKEN_AND_COMPARE_ERROR(TOKEN_ASSIGNMENT);
+    ruleExp(false, false);
+}
+
+/*  39: <expression> -> expression */
+void ruleExp(bool allowEmpty, bool allowFunc) {
     Vector *vector = vectorInit();
     htab_t *table = htab_init(1);
+    //defineFunc(table, "test", NULL, NULL);
     vectorPush(vector, (void*) table);
 
     expResult result = expression(vector, table);
+
+    if(!allowEmpty && result.isEmpty)
+        THROW_ERROR_SYNTAX();
+
+    if(!allowFunc && result.isFunc)
+        THROW_ERROR_SYNTAX();
+
     stackPush(stack, result.newToken);
+
+    if(result.isFunc) {
+        /*GET_TOKEN_AND_COMPARE_ERROR(TOKEN_IDENTIFIER);
+        GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACKET_LEFT);
+        ruleCallParams();
+        GET_TOKEN_AND_COMPARE_ERROR(TOKEN_BRACE_RIGHT);*/
+
+        ruleStat();
+    }
 }
 
 void parser_main() {

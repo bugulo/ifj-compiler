@@ -1,14 +1,25 @@
+/*safasfasf
+
+*/
 package main
 
 func test(test string, test int) (int, string, float64) {
-	if {
-	} else {
-	}
-	return
+	baf = 5 + 5
 
-	for  ; ; {
-		
+	if 5 + 5 {
+	} else {
+		return
+
+
+
 	}
+	return 5 + 5, 5
 }
 
-func test(test string) {}
+func main() {}
+
+
+
+/*safasfasf
+
+*/
