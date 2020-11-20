@@ -25,7 +25,7 @@ typedef enum{
 
 typedef struct{
     Token newToken; //newly read token from scanner
-    Token result;   //Token with name of tmp var where intermediate result is stored
+    String result;   //String with name of tmp var where intermediate result is stored
     bool isFunc;    //if true, expression was function, check always!
     bool isEmpty;   //true when expression is empty
 } expResult;
