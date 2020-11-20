@@ -7,11 +7,14 @@
 
 bool isVarDefined(htab_t *symTable, htab_key_t name)
 {
-    htab_iterator_t tmp = htab_find(symTable, name);
-    if (tmp.ptr != NULL)
+    if(symTable != NULL)
     {
-        if(tmp.ptr->isVar == true)
-            return true;
+        htab_iterator_t tmp = htab_find(symTable, name);
+        if (tmp.ptr != NULL)
+        {
+            if(tmp.ptr->isVar == true)
+                return true;
+        }
     }
     return false;
 }
@@ -270,7 +273,7 @@ void removeFuncTypes(Vector *types){
 void checkFuncTypes(Vector *types1, Vector *types2){
     if(types1 != NULL && types2 != NULL){
         if(vectorLength(types1) == vectorLength(types2)){
-            for(int i = 0; i < vectorLength(types1); i++){
+            for(unsigned int i = 0; i < vectorLength(types1); i++){
                 if(*(varDataType *)vectorGet(types1, i) != *(varDataType *)vectorGet(types2, i)){
                     throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function");
                 }
