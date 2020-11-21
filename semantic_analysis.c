@@ -43,6 +43,7 @@ void setVarType(htab_t *symTable, htab_key_t name, varDataType varDataType)
 TokenValue getVarValue(htab_t* symTable, htab_key_t name)
 {
     TokenValue emptyVal;
+    emptyVal.i = 0;
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
@@ -222,7 +223,7 @@ htab_t *getSymTableForVar(Vector *tableVector, htab_key_t name)
 {
     htab_iterator_t tmp;
     unsigned int vecLength = vectorLength(tableVector);
-    for (unsigned int i = 1; i < vecLength; i++)
+    for (unsigned int i = 1; i <= vecLength; i++)
     {
         htab_t *tmpTable = (htab_t *)vectorGet(tableVector, vecLength - i);
         tmp = htab_find(tmpTable, name);
@@ -238,7 +239,7 @@ int getSymtableIdForVar(Vector *tableVector, htab_key_t name)
 {
     htab_iterator_t tmp;
     unsigned int vecLength = vectorLength(tableVector);
-    for (unsigned int i = 1; i < vecLength; i++)
+    for (unsigned int i = 1; i <= vecLength; i++)
     {
         htab_t *tmpTable = (htab_t *)vectorGet(tableVector, vecLength - i);
         tmp = htab_find(tmpTable, name);
