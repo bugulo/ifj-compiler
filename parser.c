@@ -455,7 +455,7 @@ void ruleReturnExp(ParserData *data) {
 }
 
 /*  23: <call_params> -> <values> <call_params_n>
-        <call_params> -> eps    */
+    24: <call_params> -> eps    */
 
 void ruleCallParams(ParserData *data, Vector *names, Vector *types) {
     if(ruleValues(data, names, types)) {
