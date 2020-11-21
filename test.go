@@ -1,25 +1,12 @@
-/*safasfasf
-
-*/
 package main
 
-func test(test string, test int) (int, string, float64) {
-	baf = 5 + 5
-
-	if 5 + 5 {
-	} else {
-		return
-
-
-
-	}
-	return 5 + 5, 5
+func main() {
+	test := "safas"
+	test2 := 10
+	test, test2 = baf("sfasfa", 10)
+	return
 }
 
-func main() {}
-
-
-
-/*safasfasf
-
-*/
+func baf(test2 string, test int) (string, int) {
+	return "safas", 10
+}
