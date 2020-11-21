@@ -194,9 +194,9 @@ void ruleStList() {
 }
 
 /*  19: <stat> -> id <stat_body>
-    30: <stat> -> if <expression> { <st_list> } else { <st_list> }
-    31: <stat> -> for <for_def> ; <expression> ; <for_assign> { <st_list> }
-    36: <stat> -> return <return_exp> */
+    35: <stat> -> if <expression> { <st_list> } else { <st_list> }
+    36: <stat> -> for <for_def> ; <expression> ; <for_assign> { <st_list> }
+    41: <stat> -> return <return_exp> */
 bool ruleStat() {
     RETRIEVE_TOKEN();
 
@@ -261,31 +261,31 @@ void ruleStatBody() {
     }
 }
 
-/*  26: <id_n> -> , id <id_n>
-    27: <id_n> -> eps */
+/*  31: <id_n> -> , id <id_n>
+    32: <id_n> -> eps */
 void ruleIdN() {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_COMA);
     GET_TOKEN_AND_COMPARE_ERROR(TOKEN_IDENTIFIER);
     ruleIdN();
 }
 
-/*  28: <expression_n> -> , <expression> <expression_n>
-    29: <expression_n> -> eps */
+/*  33: <expression_n> -> , <expression> <expression_n>
+    34: <expression_n> -> eps */
 void ruleExpN() {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_COMA);
     ruleExp(false, false);
     ruleExpN();
 }
 
-/*  37: <return_exp> -> <expression> <expression_n>
-    38: <return_exp> -> eps */
+/*  42: <return_exp> -> <expression> <expression_n>
+    43: <return_exp> -> eps */
 void ruleReturnExp() {
     ruleExp(true, false);
     ruleExpN();
 }
 
 /*  23: <call_params> -> <values> <call_params_n>
-        <call_params> -> eps    */
+    24: <call_params> -> eps    */
 
 void ruleCallParams() {
     if(ruleValues()) {
@@ -295,8 +295,8 @@ void ruleCallParams() {
     }
 }
 
-/*  <call_params_n> -> , <values> <call_params_n>
-    <call_params_n> -> eps  */
+/*  25: <call_params_n> -> , <values> <call_params_n>
+    26: <call_params_n> -> eps  */
 void ruleCallParamsN() {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_COMA);
 
@@ -307,10 +307,10 @@ void ruleCallParamsN() {
     }
 }
 
-/*  <values> -> value_int
-    <values> -> value_float
-    <values> -> value_string
-    <values> -> id  */
+/*  27: <values> -> value_int
+    28: <values> -> value_float64
+    29: <values> -> value_string
+    30: <values> -> id  */
 bool ruleValues() {
     RETRIEVE_TOKEN();
 
@@ -320,8 +320,8 @@ bool ruleValues() {
         return true;
 }
 
-/*  32: <for_def> -> id := <expression>
-    33: <for_def> -> eps    */
+/*  37: <for_def> -> id := <expression>
+    38: <for_def> -> eps    */
 void ruleForDef() {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_IDENTIFIER);
 
@@ -329,8 +329,8 @@ void ruleForDef() {
     ruleExp(false, false);
 }
 
-/*  34: <for_assign> -> id = <expression>
-    35: <for_assign> -> eps */
+/*  39: <for_assign> -> id = <expression>
+    40: <for_assign> -> eps */
 void ruleForAssign() {
     GET_TOKEN_AND_COMPARE_RETURN_PUSH(TOKEN_IDENTIFIER);
 
@@ -338,7 +338,7 @@ void ruleForAssign() {
     ruleExp(false, false);
 }
 
-/*  39: <expression> -> expression */
+/*  44: <expression> -> expression */
 void ruleExp(bool allowEmpty, bool allowFunc) {
     Vector *vector = vectorInit();
     htab_t *table = htab_init(1);
