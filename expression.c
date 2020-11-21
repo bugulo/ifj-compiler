@@ -72,13 +72,19 @@ Token semanticCheckFor3Op(Token operand1, Token operation, Token operand2, Vecto
         varDataType varType = checkOperationTypes(symtableVector, operand1, operand2);
         if (varType == NONE)
             throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible data types in expression");
-        if (operation.type == TOKEN_DIV)
-        {
+
+        if(operation.type == TOKEN_DIV)
             checkZeroDivision(getSymTableForVar(symtableVector, operand2.value.s.ptr), operand2.value.s.ptr);
-        }
+
         if (varType == STRING){
-            if (operation.type != TOKEN_PLUS){
-                throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Operation is not supported with string");
+            switch(operation.type){
+                case TOKEN_MINUS:
+                case TOKEN_MUL:
+                case TOKEN_DIV:
+                    throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Operation is not supported with string");
+                    break;
+                default:
+                    break;
             }
         }
         //prepare var for result
@@ -244,6 +250,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         //code generator
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
+        setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
         stackPush(stack, expressionToken);
         break;
     case TOKEN_LESS:
@@ -255,6 +262,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         //code generator
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
+        setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
         stackPush(stack, expressionToken);
         break;
     case TOKEN_GREATER_EQ:
@@ -266,6 +274,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         //code generator
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
+        setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
         stackPush(stack, expressionToken);
         break;
 
@@ -278,6 +287,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         //code generator
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
+        setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
         stackPush(stack, expressionToken);
         break;
     case TOKEN_EQUALS:
@@ -289,6 +299,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         //code generator
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
+        setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
         stackPush(stack, expressionToken);
         break;
     case TOKEN_NOT_EQUALS:
@@ -300,11 +311,12 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         //code generator
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
+        setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
         stackPush(stack, expressionToken);
         break;
 
     default:
-        throw_error_fatal(SYNTAX_ERROR, "%s", "Syntakticka chyba v precedencnej analyze");
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax error in expression");
     }
 }
 
