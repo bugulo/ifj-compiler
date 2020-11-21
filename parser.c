@@ -89,8 +89,8 @@ void ruleProgram(ParserData *data) {
             Vector *params = getFuncParamTypes(data->table, "main");
             Vector *returns = getFuncReturnTypes(data->table, "main");
 
-            checkFuncTypes(params, empty);
-            checkFuncTypes(returns, empty);
+            checkTypes(params, empty);
+            checkTypes(returns, empty);
         }
     }
 }
@@ -349,7 +349,7 @@ void ruleStatBody(ParserData *data, Token id) {
         if(!isFuncDefined(data->table, id.value.s.ptr))
             throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
 
-        checkFuncTypes(getFuncParamTypes(data->table, id.value.s.ptr), types);
+        checkTypes(getFuncParamTypes(data->table, id.value.s.ptr), types);
 
         if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
@@ -387,8 +387,8 @@ void ruleStatBody(ParserData *data, Token id) {
             if(!isFuncDefined(data->table, func_name.ptr))
                 throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", func_name.ptr);
 
-            checkFuncTypes(getFuncParamTypes(data->table, func_name.ptr), param_types);
-            checkFuncTypes(getFuncReturnTypes(data->table, func_name.ptr), types);
+            checkTypes(getFuncParamTypes(data->table, func_name.ptr), param_types);
+            checkTypes(getFuncReturnTypes(data->table, func_name.ptr), types);
 
             if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
                 throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
@@ -401,7 +401,7 @@ void ruleStatBody(ParserData *data, Token id) {
 
             ruleExpN(data, param_names, param_types);
 
-            checkFuncTypes(types, param_types);
+            checkTypes(types, param_types);
         }
     }
 }
@@ -451,7 +451,7 @@ void ruleReturnExp(ParserData *data) {
 
     ruleExpN(data, names, types);
 
-    checkFuncTypes(getFuncReturnTypes(data->table, data->function.ptr), types);
+    checkTypes(getFuncReturnTypes(data->table, data->function.ptr), types);
 }
 
 /*  23: <call_params> -> <values> <call_params_n>
