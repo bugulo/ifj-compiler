@@ -13,6 +13,7 @@
 #include "error.h"
 
 #define SYM_TABLE_SIZE 100
+#define EMPTY_SYMTABLE_ID -1
 
 /**
  * @brief Function checks if variable is defined
@@ -37,6 +38,22 @@ varDataType getVarType(htab_t* symTable, htab_key_t name);
  * @param Data type of variable
 */
 void setVarType(htab_t* symTable, htab_key_t name, varDataType varDataType);
+
+/**
+ * @brief Function returns value of variable
+ * @param Pointer to table of symbols where variable should be defined
+ * @param Name of variable
+ * @return Variable value
+*/
+TokenValue getVarValue(htab_t* symTable, htab_key_t name);
+
+/**
+ * @brief Function sets value of variable
+ * @param Pointer to table of symbols where variable should be defined
+ * @param Name of variable
+ * @param Data type of variable
+*/
+void setVarValue(htab_t* symTable, htab_key_t name, TokenValue value);
 
 /**
  * @brief Checks if variable is set as constant
@@ -114,6 +131,14 @@ void removeVar(htab_t *symTable, htab_key_t name);
 htab_t *getSymTableForVar(Vector *tableVector, htab_key_t name);
 
 /**
+ * @brief Function will find first symbol table where is variable defined and returt its id
+ * @param Pointer to symbol table vector
+ * @param Name of variable
+ * @return Id of symtable where variable is defined, or EMPTY_SYMTABLE_ID when undefined
+*/
+int getSymtableIdForVar(Vector *tableVector, htab_key_t name);
+
+/**
  * @brief Function will return local symbol table
  * @param Pointer to vector with symbol tables
  * @return NULL when vector is empty or pointer to local symbol table
@@ -154,11 +179,12 @@ void removeFuncTypes(Vector *types);
 bool isFuncDefined(htab_t* symTable, htab_key_t name);
 
 /**
- * @brief Function will compare two sets of parameters, throw error if they are different, or count is different
+ * @brief Function will compare two sets of parameters
  * @param Pointer to vector with first set of parameters
  * @param Pointer to vector with second set of parameters
+ * @return True if types are OK, False if not
 */
-void checkFuncTypes(Vector *types1, Vector *types2);
+bool checkTypes(Vector *types1, Vector *types2);
 
 /**
  * @brief Function will add new function to symbol table

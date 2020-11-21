@@ -40,6 +40,28 @@ void setVarType(htab_t *symTable, htab_key_t name, varDataType varDataType)
     }
 }
 
+TokenValue getVarValue(htab_t* symTable, htab_key_t name)
+{
+    TokenValue emptyVal;
+    htab_iterator_t tmp = htab_find(symTable, name);
+    if (tmp.ptr != NULL)
+    {
+        if(tmp.ptr->isVar == true)
+            return tmp.ptr->varValue;
+    }
+    return emptyVal;
+}
+
+void setVarValue(htab_t* symTable, htab_key_t name, TokenValue value)
+{
+    htab_iterator_t tmp = htab_find(symTable, name);
+    if (tmp.ptr != NULL)
+    {
+        if(tmp.ptr->isVar == true)
+            tmp.ptr->varValue = value;
+    }
+}
+
 bool isVarConst(htab_t *symTable, htab_key_t name)
 {
     htab_iterator_t tmp = htab_find(symTable, name);
@@ -199,8 +221,8 @@ void removeVar(htab_t *symTable, htab_key_t name)
 htab_t *getSymTableForVar(Vector *tableVector, htab_key_t name)
 {
     htab_iterator_t tmp;
-    unsigned int vecLength = vectorLength(tableVector) - 1;
-    for (unsigned int i = 0; i <= vecLength; i++)
+    unsigned int vecLength = vectorLength(tableVector);
+    for (unsigned int i = 1; i < vecLength; i++)
     {
         htab_t *tmpTable = (htab_t *)vectorGet(tableVector, vecLength - i);
         tmp = htab_find(tmpTable, name);
@@ -210,6 +232,22 @@ htab_t *getSymTableForVar(Vector *tableVector, htab_key_t name)
         }
     }
     return NULL;
+}
+
+int getSymtableIdForVar(Vector *tableVector, htab_key_t name)
+{
+    htab_iterator_t tmp;
+    unsigned int vecLength = vectorLength(tableVector);
+    for (unsigned int i = 1; i < vecLength; i++)
+    {
+        htab_t *tmpTable = (htab_t *)vectorGet(tableVector, vecLength - i);
+        tmp = htab_find(tmpTable, name);
+        if (tmp.ptr != NULL){
+            if(tmp.ptr->isVar == true)
+                return vecLength - i;
+        }
+    }
+    return EMPTY_SYMTABLE_ID;
 }
 
 htab_t *getLocalSymTable(Vector *tableVector){
@@ -270,20 +308,22 @@ void removeFuncTypes(Vector *types){
     }
 }
 
-void checkFuncTypes(Vector *types1, Vector *types2){
+bool checkTypes(Vector *types1, Vector *types2){
     if(types1 != NULL && types2 != NULL){
         if(vectorLength(types1) == vectorLength(types2)){
             for(unsigned int i = 0; i < vectorLength(types1); i++){
                 if(*(varDataType *)vectorGet(types1, i) != *(varDataType *)vectorGet(types2, i)){
-                    throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function");
+                    return false;
                 }
             }
+            return true;
         }
         else
         {
-            throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect parameter count in function");
+            return false;
         }
     }
+    return false;
 }
 
 void defineFunc(htab_t* symTable, htab_key_t name, Vector *paramTypes, Vector *returnTypes){
