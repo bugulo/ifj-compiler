@@ -22,13 +22,7 @@
 
 int main(int argc, char **argv)
 {
-    FILE *f = fopen("test.go", "r");
-
-    scanner_set_file(f);
-
     parser_main();
-
-    fclose(f);
 
     return 0;
 }
