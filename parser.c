@@ -306,13 +306,13 @@ bool ruleStat(ParserData *data) {
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
 
         ruleForAssign(data);
-        removeLocalSymTable(data->scopes);
 
         if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
         optional_eol(data);
         insertLocalSymTable(data->scopes);
         ruleStList(data);
+        removeLocalSymTable(data->scopes);
         removeLocalSymTable(data->scopes);
         if(!load_and_compare(data, TOKEN_BRACE_RIGHT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
