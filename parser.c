@@ -75,9 +75,10 @@ void ruleProgram(ParserData *data) {
     if(!load_and_compare(data, TOKEN_EOL, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
 
-    ruleBody(data);
-
     optional_eol(data);
+    ruleBody(data);
+    optional_eol(data);
+    
     if(!load_and_compare(data, TOKEN_EOF, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOF, got token type %d", data->token.type);
 
@@ -147,7 +148,6 @@ void ruleFunc(ParserData *data) {
 
     if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
-    optional_eol(data);
 
     data->inFunction = true;
     data->function = func_name;
@@ -250,6 +250,7 @@ void ruleRetTypesN(ParserData *data, Vector *returns) {
 /*  17: <st_list> -> <stat> EOL <st_list>
     18: <st_list> -> eps */
 void ruleStList(ParserData *data) {
+    optional_eol(data);
     if(ruleStat(data)) {
         if(!load_and_compare(data, TOKEN_EOL, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
