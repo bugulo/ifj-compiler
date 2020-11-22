@@ -6,6 +6,7 @@
 #include "stack.h"
 #include "error.h"
 #include <stdlib.h>
+#include <stdio.h>
 #define DEFAULT_STACK_SIZE 20
 
 Stack *stackInit(){
