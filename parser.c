@@ -340,6 +340,9 @@ void ruleStatBody(ParserData *data, Token id) {
 
         expResult result = ruleExp(data, false, false);
 
+        if(getVarType(scope, result.result.ptr) == BOOL)
+            throw_error_fatal(TYPE_DEFINITION_ERROR, "%s", "Bool variable declaration not supported");
+
         TokenValue value;
         if(isVarConst(scope, result.result.ptr))
             value = getVarValue(scope, result.result.ptr);
@@ -546,6 +549,9 @@ void ruleForDef(ParserData *data) {
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_DECLARATION, got token type %d", data->token.type);
 
     expResult result = ruleExp(data, false, false);
+
+    if(getVarType(getLocalSymTable(data->scopes), result.result.ptr) == BOOL)
+        throw_error_fatal(TYPE_DEFINITION_ERROR, "%s", "Bool variable declaration not supported");
 
     TokenValue value;
     if(isVarConst(getLocalSymTable(data->scopes), result.result.ptr))
