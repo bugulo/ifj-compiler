@@ -6,9 +6,8 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include <stdio.h>
-
 #include "string.h"
+#include "file.h"
 
 typedef enum {
     RESULT_NONE,
@@ -92,7 +91,7 @@ typedef struct {
  * 
  * @param file File pointer
  */
-void scanner_set_file(FILE *file);
+void scanner_set_file(dynamicArr *file);
 
 /**
  * Parse and retrieve token

@@ -1,6 +1,7 @@
 /* IFJ20 - Parser
  * Authors:
  * Erik Belko, xbelko02
+ * Michal Slesar, xslesa01
  */
 
 #ifndef PARSER_H
@@ -28,7 +29,8 @@ typedef struct {
     String function;
 } ParserData;
 
-void parser_main();
+void parse();
+
 void ruleProgram(ParserData *data);
 void ruleBody(ParserData *data);
 void ruleFuncN(ParserData *data);

@@ -19,10 +19,10 @@
 
 #include "scanner.h"
 #include "parser.h"
+#include "file.h"
 
 int main(int argc, char **argv)
 {
-    parser_main();
-
+    parse();
     return 0;
 }
