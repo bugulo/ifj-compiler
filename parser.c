@@ -109,6 +109,7 @@ void ruleBody(ParserData *data) {
 void ruleFuncN(ParserData *data) {
     if(!load_and_compare(data, TOKEN_EOL, true))
         return;
+    optional_eol(data);
     if(!load_and_compare(data, TOKEN_KEYWORD, true)) 
         return;
 
