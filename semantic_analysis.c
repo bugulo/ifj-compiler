@@ -313,8 +313,10 @@ bool checkTypes(Vector *types1, Vector *types2){
     if(types1 != NULL && types2 != NULL){
         if(vectorLength(types1) == vectorLength(types2)){
             for(unsigned int i = 0; i < vectorLength(types1); i++){
-                if(*(varDataType *)vectorGet(types1, i) != *(varDataType *)vectorGet(types2, i)){
-                    return false;
+                if(*(varDataType *)vectorGet(types1, i) != NONE && *(varDataType *)vectorGet(types2, i) != NONE)
+                {
+                    if(*(varDataType *)vectorGet(types1, i) != *(varDataType *)vectorGet(types2, i))
+                        return false;
                 }
             }
             return true;

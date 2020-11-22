@@ -57,7 +57,7 @@ void stackPush(Stack *stack, Token token){
         else{
             stack->arrPtr = realloc(stack->arrPtr, sizeof(Token) * stack->size * 2);
             if(stack->arrPtr == NULL){
-                printf("pici pici\n");
+                throw_error_fatal(INTERNAL_ERROR, "%s", "Couldn't allocate memory!");
             }
             stack->size = stack->size * 2;
             stack->stackPosition++;
