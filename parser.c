@@ -8,10 +8,10 @@
 #include "file.h"
 
 /**
- * SPECIAL _ PREMENNA 
  * VSTAVANA PRINT FUNKCIA
  * FIXNUT CISLOVANIE PRAVIDIEL + KONTROLA
  * FIXNUT EOLY
+ * PREMENNA S ROVNAKYM MENOM AKO FUNKCIA
  */
 
 void load_token(ParserData *data) {
@@ -367,12 +367,17 @@ void ruleStatBody(ParserData *data, Token id) {
         Vector *ltypes = vectorInit();
         Vector *lnames = vectorInit();
 
-        htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
-        if(scope == NULL)
-            throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
+        if(string_compare(&data->token.value.s, "_")) {
+            vectorPush(lnames, (void *) data->token.value.s.ptr);
+            addFuncType(ltypes, NONE);
+        } else {
+            htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
+            if(scope == NULL)
+                throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
 
-        vectorPush(lnames, (void *) data->token.value.s.ptr);
-        addFuncType(ltypes, getVarType(scope, data->token.value.s.ptr));
+            vectorPush(lnames, (void *) data->token.value.s.ptr);
+            addFuncType(ltypes, getVarType(scope, data->token.value.s.ptr));
+        }
 
         ruleIdN(data, ltypes, lnames);
 
@@ -427,12 +432,17 @@ void ruleIdN(ParserData *data, Vector *types, Vector *names) {
     if(!load_and_compare(data, TOKEN_IDENTIFIER, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
 
-    htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
-    if(scope == NULL)
-        throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
+    if(string_compare(&data->token.value.s, "_")) {
+        vectorPush(names, (void *) data->token.value.s.ptr);
+        addFuncType(types, NONE);
+    } else {
+        htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
+        if(scope == NULL)
+            throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
 
-    vectorPush(names, (void *) data->token.value.s.ptr);
-    addFuncType(types, getVarType(scope, data->token.value.s.ptr));
+        vectorPush(names, (void *) data->token.value.s.ptr);
+        addFuncType(types, getVarType(scope, data->token.value.s.ptr));
+    }
 
     ruleIdN(data, types, names);
 }
@@ -555,12 +565,17 @@ void ruleForAssign(ParserData *data) {
     Vector *ltypes = vectorInit();
     Vector *lnames = vectorInit();
 
-    htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
-    if(scope == NULL)
-        throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
+    if(string_compare(&data->token.value.s, "_")) {
+        vectorPush(lnames, (void *) data->token.value.s.ptr);
+        addFuncType(ltypes, NONE);
+    } else {
+        htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
+        if(scope == NULL)
+            throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
 
-    vectorPush(lnames, (void *) data->token.value.s.ptr);
-    addFuncType(ltypes, getVarType(scope, data->token.value.s.ptr));
+        vectorPush(lnames, (void *) data->token.value.s.ptr);
+        addFuncType(ltypes, getVarType(scope, data->token.value.s.ptr));
+    }
 
     ruleIdN(data, ltypes, lnames);
 
@@ -655,15 +670,16 @@ void register_functions(ParserData *data) {
 
 void parse() {
     dynamicArr *file = arrInit();
-
-    FILE *f = fopen("test.go", "r");
+    copyStdinToArr(file);
+    
+    /*FILE *f = fopen("test.go", "r");
     int c = fgetc(f);
     while (c != EOF)
     {
         arrPutc(file, c);
         c = fgetc(f);
     }
-    fclose(f);
+    fclose(f);*/
 
     scanner_set_file(file);
 
