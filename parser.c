@@ -230,6 +230,8 @@ varDataType ruleType(ParserData *data, Vector *types) {
 void ruleRetTypes(ParserData *data, Vector *returns) {
     if(!load_and_compare(data, TOKEN_BRACKET_LEFT, true))
         return;
+    if(load_and_compare(data, TOKEN_BRACKET_RIGHT, true))
+        return;
 
     ruleType(data, returns);
     ruleRetTypesN(data, returns);
@@ -311,6 +313,8 @@ bool ruleStat(ParserData *data) {
 
         if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
+        if(!load_and_compare(data, TOKEN_EOL, false))
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
         optional_eol(data);
         insertLocalSymTable(data->scopes);
         ruleStList(data);
@@ -360,7 +364,7 @@ void ruleStatBody(ParserData *data, Token id) {
         if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
 
-        if(!isFuncDefined(data->table, id.value.s.ptr))
+        if(getSymTableForVar(data->scopes, id.value.s.ptr) != NULL || !isFuncDefined(data->table, id.value.s.ptr))
             throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
 
         if(!checkTypes(getFuncParamTypes(data->table, id.value.s.ptr), types))
@@ -371,16 +375,16 @@ void ruleStatBody(ParserData *data, Token id) {
         Vector *ltypes = vectorInit();
         Vector *lnames = vectorInit();
 
-        if(string_compare(&data->token.value.s, "_")) {
-            vectorPush(lnames, (void *) data->token.value.s.ptr);
+        if(string_compare(&id.value.s, "_")) {
+            vectorPush(lnames, (void *) id.value.s.ptr);
             addFuncType(ltypes, NONE);
         } else {
-            htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
+            htab_t *scope = getSymTableForVar(data->scopes, id.value.s.ptr);
             if(scope == NULL)
-                throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
+                throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", id.value.s.ptr);
 
-            vectorPush(lnames, (void *) data->token.value.s.ptr);
-            addFuncType(ltypes, getVarType(scope, data->token.value.s.ptr));
+            vectorPush(lnames, (void *) id.value.s.ptr);
+            addFuncType(ltypes, getVarType(scope, id.value.s.ptr));
         }
 
         ruleIdN(data, ltypes, lnames);
@@ -407,7 +411,7 @@ void ruleStatBody(ParserData *data, Token id) {
             if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
                 throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
 
-            if(!isFuncDefined(data->table, function.ptr))
+            if(getSymTableForVar(data->scopes, function.ptr) != NULL || !isFuncDefined(data->table, function.ptr))
                 throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
             if(!checkTypes(getFuncParamTypes(data->table, function.ptr), types))
                 throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
@@ -517,6 +521,9 @@ bool ruleValues(ParserData *data, Vector *names, Vector *types) {
         return false;
     else {
         if(data->token.type == TOKEN_IDENTIFIER) {
+            if(string_compare(&data->token.value.s, "_"))
+                throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Cannot use _ in function call");
+
             htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
             if(scope == NULL)
                 throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
