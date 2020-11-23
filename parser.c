@@ -16,8 +16,9 @@
 void load_token(ParserData *data) {
     if(stackIsEmpty(data->stack)) {
         scanner_get_token(&data->token);
-    } else 
+    } else {
         data->token = stackPop(data->stack);
+    }
 }
 
 void push_token(ParserData *data, Token token) {
@@ -28,7 +29,9 @@ bool load_and_compare(ParserData *data, TokenType type, bool push) {
     load_token(data);
 
     if(data->token.type != type) {
-        if(push) push_token(data, data->token);
+        if(push) {
+            push_token(data, data->token);
+        }
         return false;
     }
 
@@ -162,8 +165,12 @@ void ruleFunc(ParserData *data) {
     } else {
         ruleStList(data);
 
-        if(!data->returned && getFuncReturnTypes(data->table, data->function.ptr)->length != 0)
-            throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Missing return in function %s", data->function.ptr);
+        if(!data->returned) {
+            if(getFuncReturnTypes(data->table, data->function.ptr)->length == 0)
+                return_function(vectorInit(), data->scopes);
+            else
+                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Missing return in function %s", data->function.ptr);
+        }
 
         if(string_compare(&data->function, "main"))
             main_end();
@@ -457,6 +464,8 @@ void ruleStatBody(ParserData *data, Token id) {
 
             if(!load_and_compare(data, TOKEN_EOL, true))
                 throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+
+            push_token(data, data->token);
 
             if(getSymTableForVar(data->scopes, function.ptr) != NULL || !isFuncDefined(data->table, function.ptr))
                 throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
