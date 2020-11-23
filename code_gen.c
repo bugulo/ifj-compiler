@@ -16,7 +16,7 @@
 char *variableToString(Var variable, Vector *varScopeVec)
 {
     int scopeId = getSymtableIdForVar(varScopeVec, variable.name.ptr);
-    int varLength = snprintf(NULL, 0, "%d$%s", scopeId, variable.name.ptr);
+    int varLength = snprintf(NULL, 0, "$%d$%s", scopeId, variable.name.ptr);
     if (isVarUserDefined(getSymTableForVar(varScopeVec, variable.name.ptr), variable.name.ptr) == false)
         variable.frame = TEMP_FRAME;
 
@@ -26,13 +26,13 @@ char *variableToString(Var variable, Vector *varScopeVec)
     switch (variable.frame)
     {
     case TEMP_FRAME:
-        sprintf(nameString, "TF@%d$%s", scopeId, variable.name.ptr);
+        sprintf(nameString, "TF@$%d$%s", scopeId, variable.name.ptr);
         break;
     case LOCAL_FRAME:
-        sprintf(nameString, "LF@%d$%s", scopeId, variable.name.ptr);
+        sprintf(nameString, "LF@$%d$%s", scopeId, variable.name.ptr);
         break;
     case GLOBAL_FRAME:
-        sprintf(nameString, "GF@%d$%s", scopeId, variable.name.ptr);
+        sprintf(nameString, "GF@$%d$%s", scopeId, variable.name.ptr);
         break;
     }
     return nameString;
@@ -44,15 +44,14 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
         return variableToString(symbol.var, varScopeVec);
 
     char *numberString;
-
     if (symbol.token.type == TOKEN_STRING)
     {
         char *formatString = "string@%s";
-        int length = snprintf(NULL, 0, formatString, symbol.token.value.i);
+        int length = snprintf(NULL, 0, formatString, symbol.token.value.s.ptr);
         numberString = malloc(sizeof(char) * length + 1);
         if (numberString == NULL)
             throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
-        sprintf(numberString, formatString, symbol.token.value.i);
+        sprintf(numberString, formatString, symbol.token.value.s.ptr);
     }
 
     if (symbol.token.type == TOKEN_NUMBER_INT)
@@ -536,7 +535,7 @@ void for_end()
 #ifdef DEBUG
     print("Ending `for`. (id: %d)", label_counter);
 #endif
-    print_i("JMP $for_start%d", label_counter);
+    print_i("JUMP $for_start%d", label_counter);
     print_i("LABEL $for_end%d", label_counter);
     label_counter++;
 }
@@ -544,14 +543,14 @@ void for_end()
 void define_var(Var var, Symb value, Vector *varScopeVec)
 {
 #ifdef DEBUG
-    print("Creating variable `%s`, and assigning value `%s`", variableToString(var), symbolToString(value));
+    //print("Creating variable `%s`, and assigning value `%s`", variableToString(var), symbolToString(value));
 #endif
     print_i("DEFVAR %s", variableToString(var, varScopeVec));
     print_i("MOVE %s %s", variableToString(var, varScopeVec), symbolToString(value, varScopeVec));
 }
 
 void main_end() {
-    print_i("JMP $program_end");
+    print_i("JUMP $program_end");
 }
 
 void program_end() {

@@ -221,7 +221,7 @@ void reduceRules1Op(Stack *stack, Token operand1, Vector *symtableVector)
         value.token = operand1;
         value.isVar = false;
         define_var(var, value, symtableVector);
-
+        
         stackPush(stack, expressionToken);
         break;
     default:
@@ -249,7 +249,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 
         //code generator
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
-        ASSIGN_OPERAND1SYMB(true, operand2.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         ADD(dest, operand1Symb, operand2Symb, false, symtableVector);
 
@@ -265,7 +265,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 
         //code generator
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
-        ASSIGN_OPERAND1SYMB(true, operand2.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         SUB(dest, operand1Symb, operand2Symb, false, symtableVector);
 
@@ -281,7 +281,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 
         //code generator
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
-        ASSIGN_OPERAND1SYMB(true, operand2.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         MUL(dest, operand1Symb, operand2Symb, false, symtableVector);
 
@@ -297,7 +297,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 
         //code generator
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
-        ASSIGN_OPERAND1SYMB(true, operand2.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         varDataType tmp = getVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr);
         if(tmp == FLOAT)
@@ -334,7 +334,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 
         //code generator
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
-        ASSIGN_OPERAND1SYMB(true, operand2.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         GT(dest, operand1Symb, operand2Symb, false, symtableVector);
 
@@ -352,7 +352,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 
         //code generator
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
-        ASSIGN_OPERAND1SYMB(true, operand2.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         LT(dest, operand1Symb, operand2Symb, false, symtableVector);
 
@@ -404,7 +404,7 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 
         //code generator
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
-        ASSIGN_OPERAND1SYMB(true, operand2.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         EQ(dest, operand1Symb, operand2Symb, false, symtableVector);
 
