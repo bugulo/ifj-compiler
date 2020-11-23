@@ -11,7 +11,6 @@
  * VSTAVANA PRINT FUNKCIA
  * FIXNUT CISLOVANIE PRAVIDIEL + KONTROLA
  * FIXNUT EOLY
- * PREMENNA S ROVNAKYM MENOM AKO FUNKCIA
  */
 
 void load_token(ParserData *data) {
@@ -340,6 +339,9 @@ void ruleStatBody(ParserData *data, Token id) {
 
     htab_t *scope = getLocalSymTable(data->scopes);
     if(data->token.type == TOKEN_DECLARATION) {
+        if(string_compare(&id.value.s, "_")) 
+            throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
+
         if(isVarUserDefined(scope, id.value.s.ptr))
             throw_error_fatal(DEFINITION_ERROR, "Variable %s already defined", id.value.s.ptr);
 
@@ -555,6 +557,9 @@ void ruleForDef(ParserData *data) {
     
     if(!load_and_compare(data, TOKEN_DECLARATION, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_DECLARATION, got token type %d", data->token.type);
+
+    if(string_compare(&id.value.s, "_")) 
+        throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
 
     expResult result = ruleExp(data, false, false);
 
