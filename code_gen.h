@@ -98,7 +98,7 @@ void AND(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec);
 void OR(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec);
 
 //NOT ⟨var⟩ ⟨symb1⟩ ⟨symb2⟩
-void NOT(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec);
+void NOT(Var dest, Symb op1, bool useStack, Vector *varScopeVec);
 
 /*______________TYPE_CASTING_OPERATIONS_______________*/
 

@@ -299,17 +299,15 @@ void OR(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec)
         print_i("%s", "ORS");
 }
 
-void NOT(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec)
+void NOT(Var dest, Symb op1, bool useStack, Vector *varScopeVec)
 {
     if (!useStack)
     {
         char *destString = variableToString(dest, varScopeVec);
         char *op1String = symbolToString(op1, varScopeVec);
-        char *op2String = symbolToString(op2, varScopeVec);
-        print_i("%s %s %s %s", "NOT", destString, op1String, op2String);
+        print_i("%s %s %s", "NOT", destString, op1String);
         free(destString);
         free(op1String);
-        free(op2String);
     }
     else
         print_i("%s", "NOTS");
