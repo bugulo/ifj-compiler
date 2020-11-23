@@ -524,7 +524,7 @@ void for_body(Var res, Vector *varScopeVec)
     print("`For` body, watch out for the end !! (id: %d)", label_counter);
 #endif
     char *resultString = variableToString(res, varScopeVec);
-    print_i("JMPIFNEQ $for_end%d %s bool@true", label_counter, resultString);
+    print_i("JUMPIFNEQ $for_end%d %s bool@true", label_counter, resultString);
     free(resultString);
     label_counter++;
 }
