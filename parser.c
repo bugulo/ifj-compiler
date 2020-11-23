@@ -9,7 +9,6 @@
 #include "code_gen.h"
 
 /**
- * VSTAVANA PRINT FUNKCIA
  * FIXNUT CISLOVANIE PRAVIDIEL + KONTROLA
  * FIXNUT EOLY
  */
@@ -81,8 +80,6 @@ void ruleProgram(ParserData *data) {
     
     if(!load_and_compare(data, TOKEN_EOF, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOF, got token type %d", data->token.type);
-
-    printf("safasfasasf\n");
 
     if(data->isFirstScan) {
         if(!isFuncDefined(data->table, "main"))
@@ -290,6 +287,8 @@ bool ruleStat(ParserData *data) {
         if(getVarType(getLocalSymTable(data->scopes), result.result.ptr) != BOOL)
             throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible expression error");
 
+        if_start(result.result.ptr, data->scopes);
+
         if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
         optional_eol(data);
@@ -304,12 +303,17 @@ bool ruleStat(ParserData *data) {
 
         if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
+
+        if_core();
+
         optional_eol(data);
         insertLocalSymTable(data->scopes);
         ruleStList(data);
         removeLocalSymTable(data->scopes);
         if(!load_and_compare(data, TOKEN_BRACE_RIGHT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
+
+        if_end();
         return true;
     } else if(data->token.type == TOKEN_KEYWORD && data->token.value.k == KEYWORD_FOR) {
         insertLocalSymTable(data->scopes);
@@ -317,11 +321,16 @@ bool ruleStat(ParserData *data) {
         if(!load_and_compare(data, TOKEN_SEMICOLON, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
 
+        for_start();
+
         expResult result = ruleExp(data, false, false);
         if(getVarType(getLocalSymTable(data->scopes), result.result.ptr) != BOOL)
             throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible expression error");
         if(!load_and_compare(data, TOKEN_SEMICOLON, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
+
+        Var exp_result = {.name = result.result, .frame = TEMP_FRAME};
+        for_body(exp_result, data->scopes);
 
         ruleForAssign(data);
 
@@ -334,8 +343,11 @@ bool ruleStat(ParserData *data) {
         ruleStList(data);
         removeLocalSymTable(data->scopes);
         removeLocalSymTable(data->scopes);
+
         if(!load_and_compare(data, TOKEN_BRACE_RIGHT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
+
+        for_end();
         return true;
     } else if(data->token.type == TOKEN_KEYWORD && data->token.value.k == KEYWORD_RETURN) {
         ruleReturnExp(data);
@@ -372,6 +384,11 @@ void ruleStatBody(ParserData *data, Token id) {
             value.i = 0;
 
         defineUserVar(scope, id.value.s.ptr, getVarType(scope, result.result.ptr), value, isVarConst(scope, result.result.ptr));
+
+        Var target = {.name = id.value.s, .frame = LOCAL_FRAME};
+        Var source = {.name = result.result, .frame = LOCAL_FRAME};
+        Symb symbol = {.isVar = true, .var = source};
+        define_var(target, symbol, data->scopes);
     } else if(data->token.type == TOKEN_BRACKET_LEFT) {
         Vector *types = vectorInit();
         Vector *names = vectorInit();
@@ -384,10 +401,18 @@ void ruleStatBody(ParserData *data, Token id) {
         if(getSymTableForVar(data->scopes, id.value.s.ptr) != NULL || !isFuncDefined(data->table, id.value.s.ptr))
             throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
 
-        if(!checkTypes(getFuncParamTypes(data->table, id.value.s.ptr), types))
-            throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
+        if(string_compare(&id.value.s, "print")) {
+            for(unsigned i = 0; i < names->length; i++) {
+                Var source = {.name.ptr = (char *) vectorGet(names, i), .frame = LOCAL_FRAME};
+                Symb symbol = {.isVar = true, .var = source};
+                PRINT(symbol, data->scopes);
+            }
+        } else {
+            if(!checkTypes(getFuncParamTypes(data->table, id.value.s.ptr), types))
+                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
 
-        //call_function(data->function.ptr, names, vectorInit(), data->scopes);
+            call_function(id.value.s.ptr, names, vectorInit(), data->scopes);
+        }
     } else {
         push_token(data, data->token);
 
@@ -430,12 +455,17 @@ void ruleStatBody(ParserData *data, Token id) {
             if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
                 throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
 
+            if(!load_and_compare(data, TOKEN_EOL, true))
+                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+
             if(getSymTableForVar(data->scopes, function.ptr) != NULL || !isFuncDefined(data->table, function.ptr))
                 throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
             if(!checkTypes(getFuncParamTypes(data->table, function.ptr), types))
                 throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
             if(!checkTypes(getFuncReturnTypes(data->table, function.ptr), ltypes))
                 throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call return");
+
+            call_function(function.ptr, names, lnames, data->scopes);
         } else {
             Vector *rtypes = vectorInit();
             Vector *rnames = vectorInit();
@@ -447,6 +477,26 @@ void ruleStatBody(ParserData *data, Token id) {
 
             if(!checkTypes(ltypes, rtypes))
                 throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Type mismatch");
+
+            for(unsigned i = 0; i < lnames->length; i++) {
+                char * target_name = (char *) vectorGet(lnames, i);
+                char * exp_name = (char *) vectorGet(rnames, i);
+
+                if(strcmp(target_name, "_") != 0) {
+                    htab_t *scope = getSymTableForVar(data->scopes, target_name);
+
+                    bool isConst = isVarConst(getLocalSymTable(data->scopes), exp_name);
+                    setVarConst(scope, target_name, isConst);
+                    
+                    if(isConst)
+                        setVarValue(scope, target_name, getVarValue(getLocalSymTable(data->scopes), exp_name));
+
+                    Var target = {.name.ptr = target_name, .frame = LOCAL_FRAME};
+                    Var source = {.name.ptr = exp_name, .frame = LOCAL_FRAME};
+                    Symb symbol = {.isVar = true, .var = source};
+                    MOVE(target, symbol, data->scopes);
+                }
+            }
         }
     }
 }
@@ -564,6 +614,10 @@ bool ruleValues(ParserData *data, Vector *names, Vector *types) {
             String name = defineCompilerVar(getLocalSymTable(data->scopes), type, data->token.value, true);
             vectorPush(names, (void *) name.ptr);
             addFuncType(types, type);
+
+            Var target = {.name = name, .frame = LOCAL_FRAME};
+            Symb symbol = {.isVar = false, .token = data->token};
+            define_var(target, symbol, data->scopes);
         }
         return true;
     }
@@ -595,6 +649,11 @@ void ruleForDef(ParserData *data) {
         value.i = 0;
 
     defineUserVar(getLocalSymTable(data->scopes), id.value.s.ptr, getVarType(getLocalSymTable(data->scopes), result.result.ptr), value, isVarConst(getLocalSymTable(data->scopes), result.result.ptr));
+
+    Var target = {.name = id.value.s, .frame = LOCAL_FRAME};
+    Var source = {.name = result.result, .frame = LOCAL_FRAME};
+    Symb symbol = {.isVar = true, .var = source};
+    define_var(target, symbol, data->scopes);
 }
 
 /*  34: <for_assign> -> id <id_n> = <expression> <expression_n>
@@ -634,6 +693,26 @@ void ruleForAssign(ParserData *data) {
 
     if(!checkTypes(ltypes, rtypes))
         throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Type mismatch");
+
+    for(unsigned i = 0; i < lnames->length; i++) {
+        char * target_name = (char *) vectorGet(lnames, i);
+        char * exp_name = (char *) vectorGet(rnames, i);
+
+        if(strcmp(target_name, "_") != 0) {
+            htab_t *scope = getSymTableForVar(data->scopes, target_name);
+
+            bool isConst = isVarConst(getLocalSymTable(data->scopes), exp_name);
+            setVarConst(scope, target_name, isConst);
+            
+            if(isConst)
+                setVarValue(scope, target_name, getVarValue(getLocalSymTable(data->scopes), exp_name));
+
+            Var target = {.name.ptr = target_name, .frame = LOCAL_FRAME};
+            Var source = {.name.ptr = exp_name, .frame = LOCAL_FRAME};
+            Symb symbol = {.isVar = true, .var = source};
+            MOVE(target, symbol, data->scopes);
+        }
+    }
 }
 
 /*  39: <expression> -> expression */
@@ -707,6 +786,8 @@ void register_functions(ParserData *data) {
     addFuncType(chr_returns, STRING);
     addFuncType(chr_returns, INTEGER);
     defineFunc(data->table, "chr", chr_params, chr_returns);
+
+    defineFunc(data->table, "print", vectorInit(), vectorInit());
 }
 
 void parse() {
@@ -735,8 +816,6 @@ void parse() {
     data.isFirstScan = false;
     gen_init();
     ruleProgram(&data);
-
-    printf("safasf\n");
     program_end();
 
     arrFree(file);

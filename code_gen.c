@@ -441,6 +441,7 @@ void call_function(char *name, Vector *call_params, Vector *return_params, Vecto
         if (strcmp(tmpVar.name.ptr, "_") == 0)
         {
             char *nilVar = createNilVar();
+            print_i("DEFVAR %s", nilVar);
             print_i("POPS %s", nilVar);
             free(nilVar);
             continue;
@@ -564,7 +565,7 @@ void print_i(const char *fmt, ...)
     va_list args;
     va_start(args, fmt);
     int stringLength = snprintf(NULL, 0, "%s\n", fmt);
-    char *formatString = malloc(stringLength * sizeof(char));
+    char *formatString = malloc(stringLength * sizeof(char) + 1);
     sprintf(formatString, "%s\n", fmt);
     va_end(args);
     vprintf(formatString, args);
