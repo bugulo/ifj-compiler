@@ -711,16 +711,16 @@ void register_functions(ParserData *data) {
 
 void parse() {
     dynamicArr *file = arrInit();
-    //copyStdinToArr(file);
+    copyStdinToArr(file);
     
-    FILE *f = fopen("test.go", "r");
+    /*FILE *f = fopen("test.go", "r");
     int c = fgetc(f);
     while (c != EOF)
     {
         arrPutc(file, c);
         c = fgetc(f);
     }
-    fclose(f);
+    fclose(f);*/
 
     scanner_set_file(file);
 
