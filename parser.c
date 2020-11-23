@@ -6,6 +6,7 @@
 
 #include "parser.h"
 #include "file.h"
+#include "code_gen.h"
 
 /**
  * VSTAVANA PRINT FUNKCIA
@@ -81,6 +82,8 @@ void ruleProgram(ParserData *data) {
     if(!load_and_compare(data, TOKEN_EOF, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOF, got token type %d", data->token.type);
 
+    printf("safasfasasf\n");
+
     if(data->isFirstScan) {
         if(!isFuncDefined(data->table, "main"))
             throw_error_fatal(DEFINITION_ERROR, "%s", "Missing function main");
@@ -133,11 +136,12 @@ void ruleFunc(ParserData *data) {
     String func_name = data->token.value.s;
 
     Vector *params = vectorInit();
+    Vector *names = vectorInit();
     Vector *returns = vectorInit();
 
     if(!load_and_compare(data, TOKEN_BRACKET_LEFT, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_LEFT, got token type %d", data->token.type);
-    ruleParams(data, params);
+    ruleParams(data, params, names);
     if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
 
@@ -145,11 +149,14 @@ void ruleFunc(ParserData *data) {
 
     if(data->isFirstScan)
         defineFunc(data->table, func_name.ptr, params, returns);
+    else
+        declare_function(func_name.ptr, names, data->scopes);
 
     if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
 
     data->inFunction = true;
+    data->returned = false;
     data->function = func_name;
 
     if(data->isFirstScan) {
@@ -157,6 +164,12 @@ void ruleFunc(ParserData *data) {
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
     } else {
         ruleStList(data);
+
+        if(!data->returned && getFuncReturnTypes(data->table, data->function.ptr)->length != 0)
+            throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Missing return in function %s", data->function.ptr);
+
+        if(string_compare(&data->function, "main"))
+            main_end();
     }
 
     removeLocalSymTable(data->scopes);
@@ -169,24 +182,25 @@ void ruleFunc(ParserData *data) {
 
 /*  6: <params> -> id <type> <params_n>
     7: <params> -> eps  */
-void ruleParams(ParserData *data, Vector *params) {
+void ruleParams(ParserData *data, Vector *params, Vector *names) {
     if(!load_and_compare(data, TOKEN_IDENTIFIER, true)) 
         return;
-    
+
     String name = data->token.value.s;
     varDataType type = ruleType(data, params);
 
     if(!data->isFirstScan) {
         TokenValue value;
+        vectorPush(names, (void *) name.ptr);
         defineUserVar(getLocalSymTable(data->scopes), name.ptr, type, value, false);
     }
 
-    ruleParamsN(data, params);
+    ruleParamsN(data, params, names);
 }
 
 /*  8: <params_n> -> , id <type> <params_n>
     9: <params_n> -> eps  */
-void ruleParamsN(ParserData *data, Vector *params) {
+void ruleParamsN(ParserData *data, Vector *params, Vector *names) {
     if(!load_and_compare(data, TOKEN_COMA, true)) 
         return;
     if(!load_and_compare(data, TOKEN_IDENTIFIER, false))
@@ -197,10 +211,11 @@ void ruleParamsN(ParserData *data, Vector *params) {
 
     if(!data->isFirstScan) {
         TokenValue value;
+        vectorPush(names, (void *) name.ptr);
         defineUserVar(getLocalSymTable(data->scopes), name.ptr, type, value, false);
     }
 
-    ruleParamsN(data, params);
+    ruleParamsN(data, params, names);
 }
 
 /*  10: <type> -> int
@@ -371,6 +386,8 @@ void ruleStatBody(ParserData *data, Token id) {
 
         if(!checkTypes(getFuncParamTypes(data->table, id.value.s.ptr), types))
             throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
+
+        //call_function(data->function.ptr, names, vectorInit(), data->scopes);
     } else {
         push_token(data, data->token);
 
@@ -487,6 +504,11 @@ void ruleReturnExp(ParserData *data) {
 
     if(!checkTypes(getFuncReturnTypes(data->table, data->function.ptr), types))
         throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Type mismatch");
+
+    if(!string_compare(&data->function, "main")) {
+        return_function(names, data->scopes);
+        data->returned = true;
+    }
 }
 
 /*  23: <call_params> -> <values> <call_params_n>
@@ -689,16 +711,16 @@ void register_functions(ParserData *data) {
 
 void parse() {
     dynamicArr *file = arrInit();
-    copyStdinToArr(file);
+    //copyStdinToArr(file);
     
-    /*FILE *f = fopen("test.go", "r");
+    FILE *f = fopen("test.go", "r");
     int c = fgetc(f);
     while (c != EOF)
     {
         arrPutc(file, c);
         c = fgetc(f);
     }
-    fclose(f);*/
+    fclose(f);
 
     scanner_set_file(file);
 
@@ -711,7 +733,11 @@ void parse() {
     ruleProgram(&data);
     arrSeekStart(file);
     data.isFirstScan = false;
+    gen_init();
     ruleProgram(&data);
+
+    printf("safasf\n");
+    program_end();
 
     arrFree(file);
 }

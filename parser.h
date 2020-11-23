@@ -26,6 +26,7 @@ typedef struct {
     Stack *stack;
     Stack *tokens;
     bool inFunction;
+    bool returned;
     String function;
 } ParserData;
 
@@ -35,8 +36,8 @@ void ruleProgram(ParserData *data);
 void ruleBody(ParserData *data);
 void ruleFuncN(ParserData *data);
 void ruleFunc(ParserData *data);
-void ruleParams(ParserData *data, Vector *params);
-void ruleParamsN(ParserData *data, Vector *params);
+void ruleParams(ParserData *data, Vector *params, Vector *names);
+void ruleParamsN(ParserData *data, Vector *params, Vector *names);
 varDataType ruleType(ParserData *data, Vector *types);
 void ruleRetTypes(ParserData *data, Vector *returns);
 void ruleRetTypesN(ParserData *data, Vector *returns);
