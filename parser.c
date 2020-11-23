@@ -165,15 +165,16 @@ void ruleFunc(ParserData *data) {
     } else {
         ruleStList(data);
 
-        if(!data->returned) {
-            if(getFuncReturnTypes(data->table, data->function.ptr)->length == 0)
-                return_function(vectorInit(), data->scopes);
-            else
-                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Missing return in function %s", data->function.ptr);
-        }
-
         if(string_compare(&data->function, "main"))
             main_end();
+        else {
+            if(!data->returned) {
+                if(getFuncReturnTypes(data->table, data->function.ptr)->length == 0)
+                    return_function(vectorInit(), data->scopes);
+                else
+                    throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Missing return in function %s", data->function.ptr);
+            }
+        }
     }
 
     removeLocalSymTable(data->scopes);
