@@ -145,6 +145,12 @@ void for_body(Var res, Vector *varScopeVec);
 // Final part of the for cycle
 void for_end();
 
+// Call this at the end of the main
+void main_end();
+
+// This should be the last function called 
+void program_end();
+
 void define_var(Var var, Symb value, Vector *varScopeVec);
 
 #endif
