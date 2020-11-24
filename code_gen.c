@@ -16,7 +16,8 @@
 char *variableToString(Var variable, Vector *varScopeVec)
 {
     int scopeId = getSymtableIdForVar(varScopeVec, variable.name.ptr);
-    int varLength = snprintf(NULL, 0, "$%d$%s", scopeId, variable.name.ptr);
+    unsigned varCnt = getVarCnt(getSymTableForVar(varScopeVec, variable.name.ptr), variable.name.ptr);
+    int varLength = snprintf(NULL, 0, "$%d$%d$%s", varCnt,scopeId, variable.name.ptr);
     if (isVarUserDefined(getSymTableForVar(varScopeVec, variable.name.ptr), variable.name.ptr) == false)
         variable.frame = TEMP_FRAME;
 
@@ -26,13 +27,13 @@ char *variableToString(Var variable, Vector *varScopeVec)
     switch (variable.frame)
     {
     case TEMP_FRAME:
-        sprintf(nameString, "TF@$%d$%s", scopeId, variable.name.ptr);
+        sprintf(nameString, "TF@$%d$%d$%s", varCnt, scopeId, variable.name.ptr);
         break;
     case LOCAL_FRAME:
-        sprintf(nameString, "LF@$%d$%s", scopeId, variable.name.ptr);
+        sprintf(nameString, "LF@$%d$%d$%s", varCnt, scopeId, variable.name.ptr);
         break;
     case GLOBAL_FRAME:
-        sprintf(nameString, "GF@$%d$%s", scopeId, variable.name.ptr);
+        sprintf(nameString, "GF@$%d$%d$%s", varCnt, scopeId, variable.name.ptr);
         break;
     }
     return nameString;
@@ -466,10 +467,15 @@ void return_function(Vector *return_params, Vector *varScopeVec)
 }
 
 Vector *if_count_stack;
+Vector *for_count_stack;
+Vector *for_string_stack;
 
 void gen_init()
-{
+{   
+    //sglobalne spremenne
     if_count_stack = vectorInit();
+    for_count_stack = vectorInit();
+    for_string_stack = vectorInit();
     print_i(".IFJcode20");
     print_i("JUMP main");
 }  
@@ -517,31 +523,65 @@ void for_start()
 #ifdef DEBUG
     print("Starting `for`, watch out for body and end !! (id: %d)", label_counter);
 #endif
-    print_i("LABEL $for_start%d", label_counter);
-    label_counter++;
+    unsigned *tmpCnt = malloc(sizeof(unsigned));
+    if(tmpCnt == NULL)
+        throw_error_fatal(INTERNAL_ERROR, "Memory allocation error");
+
+    *tmpCnt = label_counter++;
+    print_i("JUMP $for_def%d", tmpCnt);
+    print_i("LABEL $for_start%d", tmpCnt);
+    vectorPush(for_count_stack, tmpCnt);
 }
 
-void for_body(Var res, Vector *varScopeVec)
+void for_expression(Var res, Vector *varScopeVec)
 {
-    static unsigned label_counter = 0;
+    unsigned *tmpCnt = vectorGet(for_count_stack, vectorLength(for_count_stack) - 1);
+    char *resultString = variableToString(res, varScopeVec);
+    print_i("JUMPIFNEQ $for_end%d %s bool@true", tmpCnt, resultString);
+    free(resultString);
+    print_i("JUMP $for_body_start%d", tmpCnt);
+}
+
+void for_assign_start()
+{
+    unsigned *tmpCnt = vectorGet(for_count_stack, vectorLength(for_count_stack) - 1);
+    print_i("LABEL $for_assign%d", tmpCnt);
+}
+
+void for_body()
+{
 #ifdef DEBUG
     print("`For` body, watch out for the end !! (id: %d)", label_counter);
 #endif
-    char *resultString = variableToString(res, varScopeVec);
-    print_i("JUMPIFNEQ $for_end%d %s bool@true", label_counter, resultString);
-    free(resultString);
-    label_counter++;
+    unsigned *tmpCnt = vectorGet(for_count_stack, vectorLength(for_count_stack) - 1);
+    print_i("JUMP $for_start%d", tmpCnt);
+    print_i("LABEL $for_body_start%d", tmpCnt);
 }
 
 void for_end()
 {
-    static unsigned label_counter = 0;
 #ifdef DEBUG
     print("Ending `for`. (id: %d)", label_counter);
 #endif
-    print_i("JUMP $for_start%d", label_counter);
-    print_i("LABEL $for_end%d", label_counter);
-    label_counter++;
+    unsigned *tmpCnt = vectorPop(for_count_stack);
+    print_i("JUMP $for_assign%d", tmpCnt);
+    print_i("LABEL $for_def%d", tmpCnt);
+
+    char *defVarString;
+    if(vectorLength(for_count_stack) == 0)
+    {
+        while(vectorLength(for_string_stack) > 0)
+        {
+            defVarString = vectorPop(for_string_stack);
+            print_i("DEFVAR %s", defVarString);
+            free(defVarString);
+        }
+    }
+    
+    print_i("JUMP $for_start%d", tmpCnt);
+    print_i("LABEL $for_end%d", tmpCnt);
+    
+    free(tmpCnt);
 }
 
 void define_var(Var var, Symb value, Vector *varScopeVec)
@@ -549,7 +589,11 @@ void define_var(Var var, Symb value, Vector *varScopeVec)
 #ifdef DEBUG
     //print("Creating variable `%s`, and assigning value `%s`", variableToString(var), symbolToString(value));
 #endif
-    print_i("DEFVAR %s", variableToString(var, varScopeVec));
+    if(vectorLength(for_count_stack) == 0 || isVarUserDefined(getSymTableForVar(varScopeVec, var.name.ptr), var.name.ptr) == 0)
+        print_i("DEFVAR %s", variableToString(var, varScopeVec));
+    else 
+        vectorPush(for_string_stack, variableToString(var, varScopeVec));
+
     print_i("MOVE %s %s", variableToString(var, varScopeVec), symbolToString(value, varScopeVec));
 }
 

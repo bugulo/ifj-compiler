@@ -1,13 +1,16 @@
-//compiler 2
-//
 package main
-
 func main() {
-	test := 150 / (5 + 5)
-	baf(10)
-	print(test)
+	for i := 0; i < 10; i = i + 1 {
+		baf := "kokot"
+		for i := 0; i < 10; i = i + 1 {
+			baf := i
+			print(baf)
+		}
+		print(baf)
+		test(i)
+	}
 }
 
-func baf(a int) () {
-	test := 10
+func test (a int) () {
+	print(a)
 }

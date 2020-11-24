@@ -41,6 +41,7 @@ struct htab_item {
     TokenValue varValue;        //value of statically defined variable
     bool isVarUsedDefined;      //set to false when its compiler created variable
     bool isConst;               //set to false if its not constant anymore
+    unsigned varCnt;
     //for functions
     Vector *returnTypes;        //return types from function
     Vector *paramTypes;         //params for functions

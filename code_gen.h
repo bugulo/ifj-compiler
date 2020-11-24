@@ -139,8 +139,12 @@ void if_end();
 // Inital for part, remeber to have all needed variables in a frame
 void for_start();
 
+void for_expression(Var res, Vector *varScopeVec);
+
+void for_assign_start();
+
 // Body of a for cycle, `res` is result of a test expression
-void for_body(Var res, Vector *varScopeVec);
+void for_body();
 
 // Final part of the for cycle
 void for_end();

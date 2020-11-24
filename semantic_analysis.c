@@ -84,6 +84,17 @@ void setVarConst(htab_t *symTable, htab_key_t name, bool isConst)
     }
 }
 
+unsigned getVarCnt(htab_t *symTable, htab_key_t name)
+{
+    htab_iterator_t tmp = htab_find(symTable, name);
+    if (tmp.ptr != NULL)
+    {
+        if(tmp.ptr->isVar == true)
+            return tmp.ptr->varCnt;
+    }
+    return 0;
+}
+
 varDataType checkOperationTypes(Vector *tableVector, Token var1, Token var2)
 {
     #ifdef DEBUG
@@ -157,6 +168,7 @@ String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue v
 
 void defineUserVar(htab_t *symTable, htab_key_t name, varDataType varDataType, TokenValue varValue, bool isConst)
 {
+    static unsigned varCnt = 0;
     htab_iterator_t tmp = htab_insert(symTable, name);
     if (tmp.ptr != NULL)
     {
@@ -167,6 +179,7 @@ void defineUserVar(htab_t *symTable, htab_key_t name, varDataType varDataType, T
             tmp.ptr->varValue = varValue;
         tmp.ptr->isConst = isConst;
         tmp.ptr->isVar = true;
+        tmp.ptr->varCnt = varCnt++;
     }
     else
         throw_error_fatal(DEFINITION_ERROR, "%s", "Multiple definitions of variable");

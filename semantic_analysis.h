@@ -71,6 +71,8 @@ bool isVarConst(htab_t* symTable, htab_key_t name);
  */
 void setVarConst(htab_t* symTable, htab_key_t name, bool isConst);
 
+unsigned getVarCnt(htab_t *symTable, htab_key_t name);
+
 /**
  * @brief Check if both operands have the same data type
  * @param Pointer to symbol table vector
