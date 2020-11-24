@@ -17,7 +17,7 @@ char *variableToString(Var variable, Vector *varScopeVec)
 {
     int scopeId = getSymtableIdForVar(varScopeVec, variable.name.ptr);
     unsigned varCnt = getVarCnt(getSymTableForVar(varScopeVec, variable.name.ptr), variable.name.ptr);
-    int varLength = snprintf(NULL, 0, "$%d$%d$%s", varCnt,scopeId, variable.name.ptr);
+    int varLength = snprintf(NULL, 0, "$%d$%d$%s", varCnt, scopeId, variable.name.ptr);
     if (isVarUserDefined(getSymTableForVar(varScopeVec, variable.name.ptr), variable.name.ptr) == false)
         variable.frame = TEMP_FRAME;
 
@@ -44,38 +44,57 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
     if (symbol.isVar)
         return variableToString(symbol.var, varScopeVec);
 
-    char *numberString;
+    char *finalString;
     if (symbol.token.type == TOKEN_STRING)
     {
-        char *formatString = "string@%s";
-        int length = snprintf(NULL, 0, formatString, symbol.token.value.s.ptr);
-        numberString = malloc(sizeof(char) * length + 1);
-        if (numberString == NULL)
+        // String escaping
+        int stringLength = strlen(symbol.token.value.s.ptr);
+        char *newEscapedString = calloc(stringLength * 4 + 1, sizeof(char));
+        if (newEscapedString == NULL)
             throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
-        sprintf(numberString, formatString, symbol.token.value.s.ptr);
+
+        for (int i = 0, j = 0; i < stringLength; i++)
+        {
+            int c = symbol.token.value.s.ptr[i];
+            if ((c >= 0 && c <= 32) || c == 35 || c == 92)
+            {
+                int printLen = snprintf(newEscapedString + j, 5, "\\0%d", c);
+                j += printLen;
+            }
+            else
+                newEscapedString[j++] = c;
+        }
+        char *formatString = "string@%s";
+        int length = snprintf(NULL, 0, formatString, newEscapedString);
+        finalString = malloc(sizeof(char) * length + 1);
+        if (finalString == NULL)
+            throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
+
+        sprintf(finalString, formatString, newEscapedString);
+        free(newEscapedString);
     }
 
     if (symbol.token.type == TOKEN_NUMBER_INT)
     {
         char *formatString = "int@%d";
         int length = snprintf(NULL, 0, formatString, symbol.token.value.i);
-        numberString = malloc(sizeof(char) * length + 1);
-        if (numberString == NULL)
+        finalString = malloc(sizeof(char) * length + 1);
+        if (finalString == NULL)
             throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
-        sprintf(numberString, formatString, symbol.token.value.i);
+        sprintf(finalString, formatString, symbol.token.value.i);
     }
 
     if (symbol.token.type == TOKEN_NUMBER_FLOAT)
     {
         char *formatString = "float@%a";
         int length = snprintf(NULL, 0, formatString, symbol.token.value.d);
-        numberString = malloc(sizeof(char) * length + 1);
-        if (numberString == NULL)
+        finalString = malloc(sizeof(char) * length + 1);
+        if (finalString == NULL)
             throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
-        sprintf(numberString, formatString, symbol.token.value.d);
+        sprintf(finalString, formatString, symbol.token.value.d);
     }
 
-    return numberString;
+    return finalString;
 }
 
 void MOVE(Var dest, Symb src, Vector *varScopeVec)
@@ -471,14 +490,14 @@ Vector *for_count_stack;
 Vector *for_string_stack;
 
 void gen_init()
-{   
+{
     //sglobalne spremenne
     if_count_stack = vectorInit();
     for_count_stack = vectorInit();
     for_string_stack = vectorInit();
     print_i(".IFJcode20");
     print_i("JUMP main");
-}  
+}
 
 void if_start(char *result, Vector *varScopeVec)
 {
@@ -524,12 +543,12 @@ void for_start()
     print("Starting `for`, watch out for body and end !! (id: %d)", label_counter);
 #endif
     unsigned *tmpCnt = malloc(sizeof(unsigned));
-    if(tmpCnt == NULL)
+    if (tmpCnt == NULL)
         throw_error_fatal(INTERNAL_ERROR, "Memory allocation error");
 
     *tmpCnt = label_counter++;
-    print_i("JUMP $for_def%d", tmpCnt);
-    print_i("LABEL $for_start%d", tmpCnt);
+    print_i("JUMP $for_def%d", *tmpCnt);
+    print_i("LABEL $for_start%d", *tmpCnt);
     vectorPush(for_count_stack, tmpCnt);
 }
 
@@ -537,15 +556,15 @@ void for_expression(Var res, Vector *varScopeVec)
 {
     unsigned *tmpCnt = vectorGet(for_count_stack, vectorLength(for_count_stack) - 1);
     char *resultString = variableToString(res, varScopeVec);
-    print_i("JUMPIFNEQ $for_end%d %s bool@true", tmpCnt, resultString);
+    print_i("JUMPIFNEQ $for_end%d %s bool@true", *tmpCnt, resultString);
     free(resultString);
-    print_i("JUMP $for_body_start%d", tmpCnt);
+    print_i("JUMP $for_body_start%d", *tmpCnt);
 }
 
 void for_assign_start()
 {
     unsigned *tmpCnt = vectorGet(for_count_stack, vectorLength(for_count_stack) - 1);
-    print_i("LABEL $for_assign%d", tmpCnt);
+    print_i("LABEL $for_assign%d", *tmpCnt);
 }
 
 void for_body()
@@ -554,8 +573,8 @@ void for_body()
     print("`For` body, watch out for the end !! (id: %d)", label_counter);
 #endif
     unsigned *tmpCnt = vectorGet(for_count_stack, vectorLength(for_count_stack) - 1);
-    print_i("JUMP $for_start%d", tmpCnt);
-    print_i("LABEL $for_body_start%d", tmpCnt);
+    print_i("JUMP $for_start%d", *tmpCnt);
+    print_i("LABEL $for_body_start%d", *tmpCnt);
 }
 
 void for_end()
@@ -564,23 +583,23 @@ void for_end()
     print("Ending `for`. (id: %d)", label_counter);
 #endif
     unsigned *tmpCnt = vectorPop(for_count_stack);
-    print_i("JUMP $for_assign%d", tmpCnt);
-    print_i("LABEL $for_def%d", tmpCnt);
+    print_i("JUMP $for_assign%d", *tmpCnt);
+    print_i("LABEL $for_def%d", *tmpCnt);
 
     char *defVarString;
-    if(vectorLength(for_count_stack) == 0)
+    if (vectorLength(for_count_stack) == 0)
     {
-        while(vectorLength(for_string_stack) > 0)
+        while (vectorLength(for_string_stack) > 0)
         {
             defVarString = vectorPop(for_string_stack);
             print_i("DEFVAR %s", defVarString);
             free(defVarString);
         }
     }
-    
-    print_i("JUMP $for_start%d", tmpCnt);
-    print_i("LABEL $for_end%d", tmpCnt);
-    
+
+    print_i("JUMP $for_start%d", *tmpCnt);
+    print_i("LABEL $for_end%d", *tmpCnt);
+
     free(tmpCnt);
 }
 
@@ -589,9 +608,9 @@ void define_var(Var var, Symb value, Vector *varScopeVec)
 #ifdef DEBUG
     //print("Creating variable `%s`, and assigning value `%s`", variableToString(var), symbolToString(value));
 #endif
-    if(vectorLength(for_count_stack) == 0 || isVarUserDefined(getSymTableForVar(varScopeVec, var.name.ptr), var.name.ptr) == 0)
+    if (vectorLength(for_count_stack) == 0 || isVarUserDefined(getSymTableForVar(varScopeVec, var.name.ptr), var.name.ptr) == 0)
         print_i("DEFVAR %s", variableToString(var, varScopeVec));
-    else 
+    else
         vectorPush(for_string_stack, variableToString(var, varScopeVec));
 
     print_i("MOVE %s %s", variableToString(var, varScopeVec), symbolToString(value, varScopeVec));
