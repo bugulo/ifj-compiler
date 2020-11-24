@@ -465,11 +465,14 @@ void return_function(Vector *return_params, Vector *varScopeVec)
     print_i("RETURN");
 }
 
+Vector *if_count_stack;
+
 void gen_init()
 {
+    if_count_stack = vectorInit();
     print_i(".IFJcode20");
     print_i("JUMP main");
-}
+}  
 
 void if_start(char *result, Vector *varScopeVec)
 {
@@ -483,28 +486,29 @@ void if_start(char *result, Vector *varScopeVec)
     char *resultString = variableToString(tmpVar, varScopeVec);
     print_i("JUMPIFNEQ $else%d %s bool@true", label_counter, resultString);
     free(resultString);
-    label_counter++;
+    unsigned *new_label_count = malloc(sizeof(unsigned));
+    *new_label_count = label_counter++;
+    vectorPush(if_count_stack, new_label_count);
 }
 
 void if_core()
 {
-    static unsigned label_counter = 0;
+    unsigned *label_counter = vectorGet(if_count_stack, vectorLength(if_count_stack) - 1);
 #ifdef DEBUG
     print("This is the core (else branch) of `if` (id: %d)", label_counter);
 #endif
-    print_i("JUMP $endif%d", label_counter);
-    print_i("LABEL $else%d", label_counter);
-    label_counter++;
+    print_i("JUMP $endif%d", *label_counter);
+    print_i("LABEL $else%d", *label_counter);
 }
 
 void if_end()
 {
-    static unsigned label_counter = 0;
+    unsigned *label_counter = vectorPop(if_count_stack);
 #ifdef DEBUG
     print("This is the end of `if` (id: %d)", label_counter);
 #endif
-    print_i("LABEL $endif%d", label_counter);
-    label_counter++;
+    print_i("LABEL $endif%d", *label_counter);
+    free(label_counter);
 }
 
 void for_start()
@@ -549,11 +553,13 @@ void define_var(Var var, Symb value, Vector *varScopeVec)
     print_i("MOVE %s %s", variableToString(var, varScopeVec), symbolToString(value, varScopeVec));
 }
 
-void main_end() {
+void main_end()
+{
     print_i("JUMP $program_end");
 }
 
-void program_end() {
+void program_end()
+{
     print_i("LABEL $program_end");
 }
 
