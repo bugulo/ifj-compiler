@@ -28,7 +28,7 @@ typedef enum
         printf("\n");                                                                                                          \
         fprintf(stderr, "#\033[32m[DEBUG]\033[1m %s:%d\033[0m In function \033[1m‘%s’\033[0m: ", __FILE__, __LINE__, __func__); \
         fprintf(stderr, fmt, ##__VA_ARGS__);                                                                                   \
-        printf("\n");                                                                                                          \
+        fprintf(stderr, "\n");                                                                                                          \
     } while (0)
 
 #define throw_error(err_no, fmt, ...)                                                                                                 \

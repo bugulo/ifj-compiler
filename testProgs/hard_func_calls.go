@@ -2,7 +2,7 @@ package main
 
 func main() {
 	height := 0
-	weight := test2(4)
+	weight := 0
 	height, weight = 5 + 10, 6 / 3
 	print(height, "\n")
 	print(weight, "\n")

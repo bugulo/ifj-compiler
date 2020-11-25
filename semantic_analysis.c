@@ -156,9 +156,10 @@ String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue v
         tmp.ptr->varDataType = varDataType;
         tmp.ptr->isVarUsedDefined = false;
         if (isConst == true)
-            tmp.ptr->varValue = varValue;
+            tmp.ptr->varValue = varValue;      
         tmp.ptr->isConst = isConst;
         tmp.ptr->isVar = true;
+        tmp.ptr->varCnt = 0;
         cnt++;
         return varName;
     }
@@ -226,7 +227,8 @@ void removeVar(htab_t *symTable, htab_key_t name)
     {
         if(tmp.ptr->isVar == true){
             if (tmp.ptr->varDataType == STRING)
-                string_free(&tmp.ptr->varValue.s);
+                if(tmp.ptr->isConst == true)
+                    string_free(&tmp.ptr->varValue.s);
             htab_erase(symTable, tmp);
         }
     }

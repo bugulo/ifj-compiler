@@ -1,23 +1,17 @@
 package main
 
-func foo(x int, y int) (int, int) {
-	i := x
-	j := (y + 2) * 3
-	i, j = j+1, i+1
-	return i, j
+func main() {
+    main := "hello"
+    call := "world"
+    printer := ""
+    printer = f(main, call)
+    for i := 1; i < 11; i = i + 1 {
+        print(i, ": ", printer, "\n")
+    }
 }
 
-func main() {
-	a := 1
-	b := 2
-	a, b = foo(a, b)
-	if a < b {
-		print(a, "<", b, "\n")
-		a := 666
-		print(a)
-	} else {
-		print(a, ">=", b, "\n")
-		a = 33
-	}
-	print(a)
+func f(param string, call string) (string) {
+    space := " "
+    final := param + space + call
+    return final
 }
