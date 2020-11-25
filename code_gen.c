@@ -453,9 +453,12 @@ void call_function(char *name, Vector *call_params, Vector *return_params, Vecto
         tmpVar.name.ptr = vectorGet(return_params, vectorLength(return_params) - i);
         if (strcmp(tmpVar.name.ptr, "_") == 0)
         {
+            TokenValue emptyVal;
             char *nilVar = createNilVar();
-            print_i("DEFVAR %s", nilVar);
-            print_i("POPS %s", nilVar);
+            defineUserVar(getLocalSymTable(varScopeVec), nilVar, KEYWORD_NONE, emptyVal, false);
+            Var nil = {.frame = LOCAL_FRAME, .name.ptr = nilVar};
+            DEFVAR(nil, varScopeVec);
+            POPS(nil, varScopeVec);
             free(nilVar);
             continue;
         }
