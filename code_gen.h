@@ -126,6 +126,25 @@ void return_function(Vector *return_params, Vector *varScopeVec);
 
 void print_i(const char *fmt, ...);
 
+/*_______________DATA_TYPES_OPERATIONS________________*/
+
+//TYPE ⟨var⟩ ⟨symb⟩
+void TYPE(Var dest, Symb op, Vector *varScopeVec);
+
+/*_______________STRING_OPERATIONS________________*/
+
+//CONCAT ⟨var⟩ ⟨symb1⟩ ⟨symb2⟩
+void CONCAT(Var dest, Symb op1, Symb op2, Vector *varScopeVec);
+
+//STRLEN ⟨var⟩ ⟨symb⟩
+void STRLEN(Var dest, Symb op, Vector *varScopeVec);
+
+//GETCHAR ⟨var⟩ ⟨symb1⟩ ⟨symb2⟩
+void GETCHAR(Var dest, Symb op1, Symb op2, Vector *varScopeVec);
+
+//SETCHAR ⟨var⟩ ⟨symb1⟩ ⟨symb2⟩
+void SETCHAR(Var dest, Symb op1, Symb op2, Vector *varScopeVec);
+
 /*_______________CONDITIONALS________________*/
 // This is the first part of if
 void if_start(char *result, Vector *varScopeVec);

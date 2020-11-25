@@ -502,14 +502,13 @@ void gen_init()
 void DEFVAR(Var id, Vector *varScopeVec)
 {
     char *stringId = variableToString(id, varScopeVec);
-
-    if (vectorLength(for_count_stack) == 0){
+    if (vectorLength(for_count_stack) == 0)
+    {
         print_i("DEFVAR %s", stringId);
         free(stringId);
     } 
     else
         vectorPush(for_string_stack, stringId);
-    
 }
 
 
@@ -558,7 +557,7 @@ void for_start()
 #endif
     unsigned *tmpCnt = malloc(sizeof(unsigned));
     if (tmpCnt == NULL)
-        throw_error_fatal(INTERNAL_ERROR, "Memory allocation error");
+        throw_error_fatal(INTERNAL_ERROR, "%s","Memory allocation error");
 
     *tmpCnt = label_counter++;
     print_i("JUMP $for_def%d", *tmpCnt);
@@ -646,4 +645,55 @@ void print_i(const char *fmt, ...)
     va_end(args);
     vprintf(formatString, args);
     free(formatString);
+}
+
+void TYPE(Var dest, Symb op, Vector *varScopeVec)
+{
+    char *destString = variableToString(dest, varScopeVec);
+    char *opString = symbolToString(op, varScopeVec);
+    print_i("%s %s %s", "TYPE", destString, opString);
+    free(destString);
+    free(opString);
+}
+
+void CONCAT(Var dest, Symb op1, Symb op2, Vector *varScopeVec)
+{
+    char *destString = variableToString(dest, varScopeVec);
+    char *op1String = symbolToString(op1, varScopeVec);
+    char *op2String = symbolToString(op2, varScopeVec);
+    print_i("%s %s %s %s", "CONCAT", destString, op1String, op2String);
+    free(destString);
+    free(op1String);
+    free(op2String);
+}
+
+void STRLEN(Var dest, Symb op, Vector *varScopeVec)
+{
+    char *destString = variableToString(dest, varScopeVec);
+    char *opString = symbolToString(op, varScopeVec);
+    print_i("%s %s %s", "STRLEN", destString, opString);
+    free(destString);
+    free(opString);
+}
+
+void GETCHAR(Var dest, Symb op1, Symb op2, Vector *varScopeVec)
+{
+    char *destString = variableToString(dest, varScopeVec);
+    char *op1String = symbolToString(op1, varScopeVec);
+    char *op2String = symbolToString(op2, varScopeVec);
+    print_i("%s %s %s %s", "GETCHAR", destString, op1String, op2String);
+    free(destString);
+    free(op1String);
+    free(op2String);
+}
+
+void SETCHAR(Var dest, Symb op1, Symb op2, Vector *varScopeVec)
+{
+    char *destString = variableToString(dest, varScopeVec);
+    char *op1String = symbolToString(op1, varScopeVec);
+    char *op2String = symbolToString(op2, varScopeVec);
+    print_i("%s %s %s %s", "SETCHAR", destString, op1String, op2String);
+    free(destString);
+    free(op1String);
+    free(op2String);
 }

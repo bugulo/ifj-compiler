@@ -251,7 +251,10 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
-        ADD(dest, operand1Symb, operand2Symb, false, symtableVector);
+        if(getVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr) == STRING)
+            CONCAT(dest, operand1Symb, operand2Symb, symtableVector);
+        else
+            ADD(dest, operand1Symb, operand2Symb, false, symtableVector);
 
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);

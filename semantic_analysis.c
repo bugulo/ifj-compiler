@@ -138,7 +138,7 @@ String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue v
     static int cnt = 0;
     String varName;
     string_init(&varName);
-    string_append_string(&varName, "Expression");
+    string_append_string(&varName, "Expression$");
 
     //count length of number
     int length = snprintf(NULL, 0, "%d", cnt);
