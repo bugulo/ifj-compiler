@@ -337,8 +337,6 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         GT(dest, operand1Symb, operand2Symb, false, symtableVector);
-
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -367,17 +365,13 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
             print("%s", "E->E>=E");
         #endif
 
-        //code generator
-        /* 
-        Var dest = {.frame = TEMP_FRAME, .name = expressionToken.value.s};
-         TODO
-        TokenValue emptyVal;
-        emptyVal.i = 0;
-        defineCompilerVar(getLocalSymTable(symtableVector), getVarType(getSymTableForVar(symtableVector, operand1.value.s.ptr), operand1.value.s.ptr), emptyVal, false);
-        Symb operand1Symb = {.isVar = true, .var.name = operand1.value.s, .var.frame = LOCAL_FRAME};
-        Symb operand2Symb = {.isVar = true, .var.name = operand2.value.s, .var.frame = LOCAL_FRAME};
+        ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         LT(dest, operand1Symb, operand2Symb, false, symtableVector);
-        */
+        ASSIGN_OPERAND1SYMB(true, expressionToken.value.s, TEMP_FRAME);
+        NOT(dest, operand1Symb, false, symtableVector);
+
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -390,7 +384,13 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
             print("%s", "E->E<=E");
         #endif
 
-        //code generator
+        ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
+        GT(dest, operand1Symb, operand2Symb, false, symtableVector);
+        ASSIGN_OPERAND1SYMB(true, expressionToken.value.s, TEMP_FRAME);
+        NOT(dest, operand1Symb, false, symtableVector);
+
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -419,7 +419,13 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
             print("%s", "E->E!=E");
         #endif
 
-        //code generator
+        ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
+        ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
+        ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
+        EQ(dest, operand1Symb, operand2Symb, false, symtableVector);
+        ASSIGN_OPERAND1SYMB(true, expressionToken.value.s, TEMP_FRAME);
+        NOT(dest, operand1Symb, false, symtableVector);
+
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -497,7 +503,9 @@ expResult expression(Vector *symtableVector, htab_t *funcTable)
                 result.isFunc = true;
                 result.newToken = inputToken;
                 return result;
-            }
+            } 
+            else 
+                throw_error_fatal(DEFINITION_ERROR, "%s", "Variable is not defined");
         }
     }
     //check if expression is empty
