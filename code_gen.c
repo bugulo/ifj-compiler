@@ -121,7 +121,6 @@ void POPFRAME()
     print_i("%s", "POPFRAME");
 }
 
-
 void CALL(char *id)
 {
     print_i("%s %s", "CALL", id);
@@ -485,6 +484,256 @@ void return_function(Vector *return_params, Vector *varScopeVec)
     print_i("RETURN");
 }
 
+// This fn PUSHes error label to the stack if TF@res == true
+void declare_error_setter()
+{
+    print_i("LABEL $error_push");
+    print_i("JUMPIFEQ $error_setter_else TF@res bool@true");
+    print_i("PUSHS int@0");
+    print_i("JUMP $error_setter_end");
+    print_i("LABEL $error_setter_else");
+    print_i("PUSHS int@1");
+    print_i("LABEL $error_setter_end");
+    print_i("RETURN");
+}
+
+void declare_inputs()
+{
+    print_i("LABEL inputs");
+    print_i("CREATEFRAME");
+    char *inputStringVarName = "TF@inputString";
+    print_i("DEFVAR %s", inputStringVarName);
+    print_i("READ %s string", inputStringVarName);
+    char *typeName = "TF@type";
+    print_i("DEFVAR %s", typeName);
+    print_i("TYPE %s %s", typeName, inputStringVarName);
+    print_i("PUSHS %s", inputStringVarName);
+    print_i("DEFVAR TF@res");
+    print_i("EQ TF@res %s string@nil", typeName);
+    print_i("CALL $error_push");
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
+void declare_inputi()
+{
+    print_i("LABEL inputi");
+    print_i("CREATEFRAME");
+    char *inputIntVarName = "TF@inputInteger";
+    print_i("DEFVAR %s", inputIntVarName);
+    print_i("READ %s int", inputIntVarName);
+    char *typeName = "TF@type";
+    print_i("DEFVAR %s", typeName);
+    print_i("TYPE %s %s", typeName, inputIntVarName);
+    print_i("PUSHS %s", inputIntVarName);
+    print_i("DEFVAR TF@res");
+    print_i("EQ TF@res %s string@nil", typeName);
+    print_i("CALL $error_push");
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
+void declare_inputf()
+{
+    print_i("LABEL inputf");
+    print_i("CREATEFRAME");
+    char *inputFloatVarName = "TF@inputFloat";
+    print_i("DEFVAR %s", inputFloatVarName);
+    print_i("READ %s float", inputFloatVarName);
+    char *typeName = "TF@type";
+    print_i("DEFVAR %s", typeName);
+    print_i("TYPE %s %s", typeName, inputFloatVarName);
+    print_i("PUSHS %s", inputFloatVarName);
+    print_i("DEFVAR TF@res");
+    print_i("EQ TF@res %s string@nil", typeName);
+    print_i("CALL $error_push");
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
+void declare_int2float()
+{
+    print_i("LABEL int2float");
+    print_i("CREATEFRAME");
+    char *inputInt = "TF@inputInt";
+    print_i("DEFVAR %s", inputInt);
+    print_i("POPS %s", inputInt);
+    char *newFloat = "TF@newFloat";
+    print_i("DEFVAR %s", newFloat);
+    print_i("INT2FLOAT %s %s", newFloat, inputInt);
+    print_i("PUSHS %s", newFloat);
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
+void declare_float2int()
+{
+    print_i("LABEL float2int");
+    print_i("CREATEFRAME");
+    char *inputFloat = "TF@inputFloat";
+    print_i("DEFVAR %s", inputFloat);
+    print_i("POPS %s", inputFloat);
+    char *newInt = "TF@newInt";
+    print_i("DEFVAR %s", newInt);
+    print_i("FLOAT2INT %s %s", newInt, inputFloat);
+    print_i("PUSHS %s", newInt);
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
+void declare_len()
+{
+    print_i("LABEL len");
+    print_i("CREATEFRAME");
+    char *inputString = "TF@inputString";
+    print_i("DEFVAR %s", inputString);
+    print_i("POPS %s", inputString);
+    char *length = "TF@length";
+    print_i("DEFVAR %s", length);
+    print_i("STRLEN %s %s", length, inputString);
+    print_i("PUSHS %s", length);
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
+void declare_ord()
+{
+    print_i("LABEL ord");
+    print_i("CREATEFRAME");
+    char *s = "TF@s";
+    char *i = "TF@i";
+    print_i("DEFVAR %s", s);
+    print_i("DEFVAR %s", i);
+    print_i("POPS %s", i);
+    print_i("POPS %s", s);
+
+    // Check 0 < i < strlen(s)
+    char *length = "TF@length";
+    print_i("DEFVAR %s", length);
+    print_i("STRLEN %s %s", length, s);
+    print_i("DEFVAR TF@res");
+    print_i("LT TF@res %s int@0", i);
+    print_i("PUSHS TF@res");
+    print_i("GT TF@res %s %s", i, length);
+    print_i("PUSHS TF@res");
+    print_i("ORS");
+    print_i("POPS TF@res");
+
+    char *c = "TF@c";
+    print_i("DEFVAR %s", c);
+    print_i("MOVE %s int@", c);
+
+    // If errored, jump to end
+    print_i("JUMPIFEQ $ord_end TF@res bool@true");
+    print_i("STRI2INT %s %s %s", c, s, i);
+
+    print_i("LABEL $ord_end");
+    print_i("PUSHS %s", c);
+    print_i("CALL $error_push");
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
+void declare_chr()
+{
+    print_i("LABEL chr");
+    print_i("CREATEFRAME");
+    char *i = "TF@i";
+    print_i("DEFVAR %s", i);
+    print_i("POPS %s", i);
+
+    // Check 0 < i < 255
+    print_i("DEFVAR TF@res");
+    print_i("LT TF@res %s int@0", i);
+    print_i("PUSHS TF@res");
+    print_i("GT TF@res %s int@255", i);
+    print_i("PUSHS TF@res");
+    print_i("ORS");
+    print_i("POPS TF@res");
+
+    char *c = "TF@c";
+    print_i("DEFVAR %s", c);
+    print_i("MOVE %s string@", c);
+
+    // If errored, jump to end
+    print_i("JUMPIFEQ $chr_end TF@res bool@true");
+    print_i("INT2CHAR %s %s", c, i);
+
+    print_i("LABEL $chr_end");
+    print_i("PUSHS %s", c);
+    print_i("CALL $error_push");
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
+void declare_substr()
+{
+    print_i("LABEL substr");
+    print_i("CREATEFRAME");
+    char *s = "TF@s";
+    char *i = "TF@i";
+    char *n = "TF@n";
+    print_i("DEFVAR %s", s);
+    print_i("DEFVAR %s", i);
+    print_i("DEFVAR %s", n);
+    print_i("POPS %s", n);
+    print_i("POPS %s", i);
+    print_i("POPS %s", s);
+
+    // Check n < 0 || 0 < i < strlen(s)
+    char *length = "TF@length";
+    print_i("DEFVAR %s", length);
+    print_i("STRLEN %s %s", length, s);
+    print_i("DEFVAR TF@res");
+    print_i("LT TF@res %s int@0", n);
+    print_i("PUSHS TF@res");
+    print_i("LT TF@res %s int@0", i);
+    print_i("PUSHS TF@res");
+    print_i("GT TF@res %s %s", i, length);
+    print_i("PUSHS TF@res");
+    print_i("ORS");
+    print_i("ORS");
+
+    // if n > length - i => n = length - i
+    char *lenMinusI = "TF@lenMinusI";
+    print_i("DEFVAR %s", lenMinusI);
+    print_i("SUB %s %s %s", lenMinusI, length, i);
+    print_i("GT TF@res %s %s", n, lenMinusI);
+    print_i("JUMPIFNEQ $substr_not_till_end TF@res bool@true");
+    print_i("MOVE %s %s", n, lenMinusI);
+    print_i("LABEL $substr_not_till_end");
+
+    print_i("POPS TF@res");
+    print_i("CALL $error_push");
+    print_i("DEFVAR TF@errInt");
+    print_i("POPS TF@errInt");
+
+    // Substr
+    char *finalString = "TF@finalString";
+    char *c = "TF@c";
+    print_i("DEFVAR %s", finalString);
+    print_i("MOVE %s string@", finalString);
+
+    // If errored, jump to end
+    print_i("JUMPIFEQ $substr_end TF@errInt int@1");
+
+    print_i("DEFVAR %s", c);
+    // while(i < n)
+    print_i("LABEL $substr_start");
+    print_i("MOVE %s string@", c);
+    print_i("GETCHAR %s %s %s", c, s, i);
+    print_i("CONCAT %s %s %s", finalString, finalString, c);
+    print_i("SUB %s %s int@1", n, n);
+    print_i("ADD %s %s int@1", i, i);
+    print_i("JUMPIFNEQ $substr_start %s int@0", n);
+
+    print_i("LABEL $substr_end");
+    print_i("PUSHS %s", finalString);
+    print_i("PUSHS TF@errInt");
+    print_i("POPFRAME");
+    print_i("RETURN");
+}
+
 Vector *if_count_stack;
 Vector *for_count_stack;
 Vector *for_string_stack;
@@ -497,6 +746,16 @@ void gen_init()
     for_string_stack = vectorInit();
     print_i(".IFJcode20");
     print_i("JUMP main");
+    declare_error_setter();
+    declare_inputs();
+    declare_inputi();
+    declare_inputf();
+    declare_int2float();
+    declare_float2int();
+    declare_len();
+    declare_substr();
+    declare_ord();
+    declare_chr();
 }
 
 void DEFVAR(Var id, Vector *varScopeVec)
@@ -506,11 +765,10 @@ void DEFVAR(Var id, Vector *varScopeVec)
     {
         print_i("DEFVAR %s", stringId);
         free(stringId);
-    } 
+    }
     else
         vectorPush(for_string_stack, stringId);
 }
-
 
 void if_start(char *result, Vector *varScopeVec)
 {
@@ -557,7 +815,7 @@ void for_start()
 #endif
     unsigned *tmpCnt = malloc(sizeof(unsigned));
     if (tmpCnt == NULL)
-        throw_error_fatal(INTERNAL_ERROR, "%s","Memory allocation error");
+        throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
 
     *tmpCnt = label_counter++;
     print_i("JUMP $for_def%d", *tmpCnt);

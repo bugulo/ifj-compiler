@@ -38,7 +38,7 @@ typedef enum
         char *errorMsg = errTypeToString(err_no);                                                                                     \
         fprintf(stderr, "\033[31m[%s]\033[1m %s:%d\033[0m In function \033[1m‘%s’\033[0m: ", errorMsg, __FILE__, __LINE__, __func__); \
         fprintf(stderr, fmt, ##__VA_ARGS__);                                                                                          \
-        printf("\n");                                                                                                                 \
+        fprintf(stderr, "\n");                                                                                                                 \
     } while (0)
 
 #define throw_error_fatal(err_no, fmt, ...)                                                                                                   \
@@ -48,8 +48,8 @@ typedef enum
         char *errorMsg = errTypeToString(err_no);                                                                                             \
         fprintf(stderr, "\033[31m[%s (FATAL)]\033[1m %s:%d\033[0m In function \033[1m‘%s’\033[0m: ", errorMsg, __FILE__, __LINE__, __func__); \
         fprintf(stderr, fmt, ##__VA_ARGS__);                                                                                                  \
-        printf("\n");                                                                                                                         \
-        printf("Exiting...\n");                                                                                                               \
+        fprintf(stderr, "\n");                                                                                                                         \
+        fprintf(stderr, "Exiting...\n");                                                                                                               \
         exit(err_no);                                                                                                                              \
     } while (0)
 
