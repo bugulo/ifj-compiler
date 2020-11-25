@@ -421,7 +421,7 @@ void declare_function(char *name, Vector *params, Vector *varScopeVec)
 
 char *createNilVar()
 {
-    char *formatString = "LF@$nilVar%d";
+    char *formatString = "nilVar%d";
     static unsigned counter = 0;
     int varLength = snprintf(NULL, 0, formatString, counter);
     char *varName = malloc(varLength * sizeof(char));
