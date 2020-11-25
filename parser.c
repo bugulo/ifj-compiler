@@ -292,7 +292,8 @@ bool ruleStat(ParserData *data) {
         return true;
     } else if(data->token.type == TOKEN_KEYWORD && data->token.value.k == KEYWORD_IF) {
         expResult result = ruleExp(data, false, false);
-        if(getVarType(getLocalSymTable(data->scopes), result.result.ptr) != BOOL)
+        
+        if(getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr) != BOOL)
             throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible expression error");
 
         if_start(result.result.ptr, data->scopes);
@@ -332,7 +333,7 @@ bool ruleStat(ParserData *data) {
         for_start();
 
         expResult result = ruleExp(data, false, false);
-        if(getVarType(getLocalSymTable(data->scopes), result.result.ptr) != BOOL)
+        if(getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr) != BOOL)
             throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible expression error");
         if(!load_and_compare(data, TOKEN_SEMICOLON, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
@@ -381,17 +382,18 @@ void ruleStatBody(ParserData *data, Token id) {
             throw_error_fatal(DEFINITION_ERROR, "Variable %s already defined", id.value.s.ptr);
 
         expResult result = ruleExp(data, false, false);
+        htab_t *exp_scope = getSymTableForVar(data->scopes, result.result.ptr);
 
-        if(getVarType(scope, result.result.ptr) == BOOL)
+        if(getVarType(exp_scope, result.result.ptr) == BOOL)
             throw_error_fatal(TYPE_DEFINITION_ERROR, "%s", "Bool variable declaration not supported");
 
         TokenValue value;
-        if(isVarConst(scope, result.result.ptr))
-            value = getVarValue(scope, result.result.ptr);
+        if(isVarConst(exp_scope, result.result.ptr))
+            value = getVarValue(exp_scope, result.result.ptr);
         else
             value.i = 0;
 
-        defineUserVar(scope, id.value.s.ptr, getVarType(scope, result.result.ptr), value, isVarConst(scope, result.result.ptr));
+        defineUserVar(scope, id.value.s.ptr, getVarType(exp_scope, result.result.ptr), value, isVarConst(exp_scope, result.result.ptr));
 
         Var target = {.name = id.value.s, .frame = LOCAL_FRAME};
         Var source = {.name = result.result, .frame = LOCAL_FRAME};
@@ -487,7 +489,7 @@ void ruleStatBody(ParserData *data, Token id) {
             Vector *rnames = vectorInit();
 
             vectorPush(rnames, (void *) result.result.ptr);
-            addFuncType(rtypes, getVarType(getLocalSymTable(data->scopes), result.result.ptr));
+            addFuncType(rtypes, getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr));
 
             ruleExpN(data, rnames, rtypes);
 
@@ -500,12 +502,13 @@ void ruleStatBody(ParserData *data, Token id) {
 
                 if(strcmp(target_name, "_") != 0) {
                     htab_t *scope = getSymTableForVar(data->scopes, target_name);
+                    htab_t *exp_scope = getSymTableForVar(data->scopes, exp_name);
 
-                    bool isConst = isVarConst(getLocalSymTable(data->scopes), exp_name);
+                    bool isConst = isVarConst(exp_scope, exp_name);
                     setVarConst(scope, target_name, isConst);
                     
                     if(isConst)
-                        setVarValue(scope, target_name, getVarValue(getLocalSymTable(data->scopes), exp_name));
+                        setVarValue(scope, target_name, getVarValue(exp_scope, exp_name));
 
                     Var target = {.name.ptr = target_name, .frame = LOCAL_FRAME};
                     Var source = {.name.ptr = exp_name, .frame = LOCAL_FRAME};
@@ -538,7 +541,7 @@ void ruleExpN(ParserData *data, Vector *names, Vector *types) {
     expResult result = ruleExp(data, false, false);
 
     vectorPush(names, (void *) result.result.ptr);
-    addFuncType(types, getVarType(getLocalSymTable(data->scopes), result.result.ptr));
+    addFuncType(types, getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr));
 
     ruleExpN(data, names, types);
 }
@@ -553,7 +556,7 @@ void ruleReturnExp(ParserData *data) {
 
     if(!result.isEmpty) {
         vectorPush(names, (void *) result.result.ptr);
-        addFuncType(types, getVarType(getLocalSymTable(data->scopes), result.result.ptr));
+        addFuncType(types, getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr));
     }
 
     ruleExpN(data, names, types);
@@ -644,17 +647,18 @@ void ruleForDef(ParserData *data) {
         throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
 
     expResult result = ruleExp(data, false, false);
+    htab_t *exp_scope = getSymTableForVar(data->scopes, result.result.ptr);
 
-    if(getVarType(getLocalSymTable(data->scopes), result.result.ptr) == BOOL)
+    if(getVarType(exp_scope, result.result.ptr) == BOOL)
         throw_error_fatal(TYPE_DEFINITION_ERROR, "%s", "Bool variable declaration not supported");
 
     TokenValue value;
-    if(isVarConst(getLocalSymTable(data->scopes), result.result.ptr))
-        value = getVarValue(getLocalSymTable(data->scopes), result.result.ptr);
+    if(isVarConst(exp_scope, result.result.ptr))
+        value = getVarValue(exp_scope, result.result.ptr);
     else
         value.i = 0;
 
-    defineUserVar(getLocalSymTable(data->scopes), id.value.s.ptr, getVarType(getLocalSymTable(data->scopes), result.result.ptr), value, isVarConst(getLocalSymTable(data->scopes), result.result.ptr));
+    defineUserVar(getLocalSymTable(data->scopes), id.value.s.ptr, getVarType(exp_scope, result.result.ptr), value, isVarConst(exp_scope, result.result.ptr));
 
     Var target = {.name = id.value.s, .frame = LOCAL_FRAME};
     Var source = {.name = result.result, .frame = LOCAL_FRAME};
@@ -696,7 +700,7 @@ void ruleForAssign(ParserData *data) {
 
     expResult result = ruleExp(data, false, false);
     vectorPush(rnames, (void *) result.result.ptr);
-    addFuncType(rtypes, getVarType(getLocalSymTable(data->scopes), result.result.ptr));
+    addFuncType(rtypes, getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr));
 
     ruleExpN(data, rnames, rtypes);
 
@@ -709,12 +713,13 @@ void ruleForAssign(ParserData *data) {
 
         if(strcmp(target_name, "_") != 0) {
             htab_t *scope = getSymTableForVar(data->scopes, target_name);
+            htab_t *exp_scope = getSymTableForVar(data->scopes, exp_name);
 
-            bool isConst = isVarConst(getLocalSymTable(data->scopes), exp_name);
+            bool isConst = isVarConst(exp_scope, exp_name);
             setVarConst(scope, target_name, isConst);
             
             if(isConst)
-                setVarValue(scope, target_name, getVarValue(getLocalSymTable(data->scopes), exp_name));
+                setVarValue(scope, target_name, getVarValue(exp_scope, exp_name));
 
             Var target = {.name.ptr = target_name, .frame = LOCAL_FRAME};
             Var source = {.name.ptr = exp_name, .frame = LOCAL_FRAME};
@@ -801,16 +806,16 @@ void register_functions(ParserData *data) {
 
 void parse() {
     dynamicArr *file = arrInit();
-    copyStdinToArr(file);
+    //copyStdinToArr(file);
     
-    /*FILE *f = fopen("test.go", "r");
+    FILE *f = fopen("test.go", "r");
     int c = fgetc(f);
     while (c != EOF)
     {
         arrPutc(file, c);
         c = fgetc(f);
     }
-    fclose(f);*/
+    fclose(f);
 
     scanner_set_file(file);
 
