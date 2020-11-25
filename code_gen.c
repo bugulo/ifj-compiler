@@ -121,12 +121,6 @@ void POPFRAME()
     print_i("%s", "POPFRAME");
 }
 
-void DEFVAR(Var id, Vector *varScopeVec)
-{
-    char *stringId = variableToString(id, varScopeVec);
-    print_i("%s %s", "DEFVAR", stringId);
-    free(stringId);
-}
 
 void CALL(char *id)
 {
@@ -404,6 +398,7 @@ void declare_function(char *name, Vector *params, Vector *varScopeVec)
     print_i("LABEL %s", name);
     print_i("CREATEFRAME");
     print_i("PUSHFRAME");
+    print_i("CREATEFRAME");
     char *paramString;
     Var tmpVar;
     tmpVar.frame = LOCAL_FRAME;
@@ -451,6 +446,7 @@ void call_function(char *name, Vector *call_params, Vector *return_params, Vecto
         print_i("PUSHS %s", paramString);
         free(paramString);
     }
+    print_i("PUSHFRAME");
     print_i("CALL %s", name);
     for (unsigned i = 1; i <= vectorLength(return_params); i++)
     {
@@ -482,6 +478,7 @@ void return_function(Vector *return_params, Vector *varScopeVec)
         free(paramString);
     }
     print_i("POPFRAME");
+    print_i("POPFRAME");
     print_i("RETURN");
 }
 
@@ -498,6 +495,20 @@ void gen_init()
     print_i(".IFJcode20");
     print_i("JUMP main");
 }
+
+void DEFVAR(Var id, Vector *varScopeVec)
+{
+    char *stringId = variableToString(id, varScopeVec);
+
+    if (vectorLength(for_count_stack) == 0){
+        print_i("DEFVAR %s", stringId);
+        free(stringId);
+    } 
+    else
+        vectorPush(for_string_stack, stringId);
+    
+}
+
 
 void if_start(char *result, Vector *varScopeVec)
 {
@@ -608,11 +619,7 @@ void define_var(Var var, Symb value, Vector *varScopeVec)
 #ifdef DEBUG
     //print("Creating variable `%s`, and assigning value `%s`", variableToString(var), symbolToString(value));
 #endif
-    if (vectorLength(for_count_stack) == 0 || isVarUserDefined(getSymTableForVar(varScopeVec, var.name.ptr), var.name.ptr) == 0)
-        print_i("DEFVAR %s", variableToString(var, varScopeVec));
-    else
-        vectorPush(for_string_stack, variableToString(var, varScopeVec));
-
+    DEFVAR(var, varScopeVec);
     print_i("MOVE %s %s", variableToString(var, varScopeVec), symbolToString(value, varScopeVec));
 }
 

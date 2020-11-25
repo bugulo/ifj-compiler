@@ -466,7 +466,7 @@ void reduceByRule(Stack *stack, Vector *symtableVector)
 
 expResult expression(Vector *symtableVector, htab_t *funcTable)
 {
-    CREATEFRAME();
+    //CREATEFRAME();
     Stack *stack = stackInit();
 
     Token inputToken;
