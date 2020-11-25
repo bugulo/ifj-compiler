@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "string.h"
 #include "error.h"
@@ -47,7 +48,7 @@ KeywordType get_keyword_type(String string) {
     else return KEYWORD_NONE;
 }
 
-bool string_to_integer(String string, int *number) {
+bool string_to_integer(String string, int64_t *number) {
     char *endptr;
 	*number = strtol(string.ptr, &endptr, 10);
     return *endptr == '\0';
@@ -231,7 +232,7 @@ void scanner_get_token(Token *token) {
                 else 
                     result = RESULT_ERROR;
             } else {
-                int number;
+                int64_t number;
                 if((string.ptr[0] != '0' || string_compare(&string, "0")) && string_to_integer(string, &number)) {
                     token->type = TOKEN_NUMBER_INT;
                     token->value.i = number;
@@ -345,8 +346,10 @@ void scanner_get_token(Token *token) {
             } else if(c >= 32) {
                 if(!string_append_char(&string, c))
                     result = RESULT_ERROR;
-            } else 
+            } else {
+                printf("%d", c);
                 result = RESULT_ERROR;
+            }
         }
     }
 

@@ -6,6 +6,8 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
+#include <stdint.h>
+
 #include "string.h"
 #include "file.h"
 
@@ -75,7 +77,7 @@ typedef enum {
 } TokenType;
 
 typedef union {
-    int i;
+    int64_t i;
     double d;
     String s;
     KeywordType k;
