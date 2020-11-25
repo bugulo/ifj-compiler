@@ -409,6 +409,9 @@ void ruleStatBody(ParserData *data, Token id) {
         if(getSymTableForVar(data->scopes, id.value.s.ptr) != NULL || !isFuncDefined(data->table, id.value.s.ptr))
             throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
 
+        if(getFuncReturnTypes(data->table, id.value.s.ptr)->length != 0)
+            throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Function %s cannot be called as a void function", id.value.s.ptr);
+
         if(string_compare(&id.value.s, "print")) {
             for(unsigned i = 0; i < names->length; i++) {
                 Var source = {.name.ptr = (char *) vectorGet(names, i), .frame = LOCAL_FRAME};
@@ -427,22 +430,25 @@ void ruleStatBody(ParserData *data, Token id) {
         Vector *ltypes = vectorInit();
         Vector *lnames = vectorInit();
 
-        if(string_compare(&id.value.s, "_")) {
-            vectorPush(lnames, (void *) id.value.s.ptr);
-            addFuncType(ltypes, NONE);
-        } else {
-            htab_t *scope = getSymTableForVar(data->scopes, id.value.s.ptr);
-            if(scope == NULL)
-                throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", id.value.s.ptr);
+        vectorPush(lnames, (void *) id.value.s.ptr);
 
-            vectorPush(lnames, (void *) id.value.s.ptr);
-            addFuncType(ltypes, getVarType(scope, id.value.s.ptr));
-        }
-
-        ruleIdN(data, ltypes, lnames);
+        ruleIdN(data, lnames);
 
         if(!load_and_compare(data, TOKEN_ASSIGNMENT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_ASSIGNMENT, got token type %d", data->token.type);
+
+        for(unsigned i = 0; i < lnames->length; i++) {
+            char *name = (char *) vectorGet(lnames, i);
+            if(strcmp(name, "_") == 0) {
+                addFuncType(ltypes, NONE);
+            } else {
+                htab_t *scope = getSymTableForVar(data->scopes, name);
+                if(scope == NULL)
+                    throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", name);
+
+                addFuncType(ltypes, getVarType(scope, name));
+            }
+        }
 
         expResult result = ruleExp(data, false, true);
 
@@ -513,25 +519,15 @@ void ruleStatBody(ParserData *data, Token id) {
 
 /*  26: <id_n> -> , id <id_n>
     27: <id_n> -> eps  */
-void ruleIdN(ParserData *data, Vector *types, Vector *names) {
+void ruleIdN(ParserData *data, Vector *names) {
     if(!load_and_compare(data, TOKEN_COMA, true))
         return;
     if(!load_and_compare(data, TOKEN_IDENTIFIER, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
 
-    if(string_compare(&data->token.value.s, "_")) {
-        vectorPush(names, (void *) data->token.value.s.ptr);
-        addFuncType(types, NONE);
-    } else {
-        htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
-        if(scope == NULL)
-            throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
+    vectorPush(names, (void *) data->token.value.s.ptr);
 
-        vectorPush(names, (void *) data->token.value.s.ptr);
-        addFuncType(types, getVarType(scope, data->token.value.s.ptr));
-    }
-
-    ruleIdN(data, types, names);
+    ruleIdN(data, names);
 }
 
 /*  28: <expression_n> -> , <expression> <expression_n>
@@ -675,22 +671,25 @@ void ruleForAssign(ParserData *data) {
     Vector *ltypes = vectorInit();
     Vector *lnames = vectorInit();
 
-    if(string_compare(&data->token.value.s, "_")) {
-        vectorPush(lnames, (void *) data->token.value.s.ptr);
-        addFuncType(ltypes, NONE);
-    } else {
-        htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
-        if(scope == NULL)
-            throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
+    vectorPush(lnames, (void *) data->token.value.s.ptr);
 
-        vectorPush(lnames, (void *) data->token.value.s.ptr);
-        addFuncType(ltypes, getVarType(scope, data->token.value.s.ptr));
-    }
-
-    ruleIdN(data, ltypes, lnames);
+    ruleIdN(data, lnames);
 
     if(!load_and_compare(data, TOKEN_ASSIGNMENT, false))
         throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_ASSIGNMENT, got token type %d", data->token.type);
+
+    for(unsigned i = 0; i < lnames->length; i++) {
+        char *name = (char *) vectorGet(lnames, i);
+        if(strcmp(name, "_") == 0) {
+            addFuncType(ltypes, NONE);
+        } else {
+            htab_t *scope = getSymTableForVar(data->scopes, name);
+            if(scope == NULL)
+                throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", name);
+
+            addFuncType(ltypes, getVarType(scope, name));
+        }
+    }
 
     Vector *rtypes = vectorInit();
     Vector *rnames = vectorInit();

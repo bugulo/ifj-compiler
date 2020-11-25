@@ -45,7 +45,7 @@ void ruleStList(ParserData *data);
 bool ruleStat(ParserData *data);
 void ruleStatBody(ParserData *data, Token id);
 
-void ruleIdN(ParserData *data, Vector *types, Vector *names);
+void ruleIdN(ParserData *data, Vector *names);
 void ruleExpN(ParserData *data, Vector *names, Vector *types);
 void ruleReturnExp(ParserData *data);
 void ruleCallParams(ParserData *data, Vector *names, Vector *types);
