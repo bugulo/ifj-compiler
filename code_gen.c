@@ -510,9 +510,16 @@ void declare_inputs()
     print_i("DEFVAR TF@res");
     print_i("EQ TF@res %s string@nil", typeName);
     print_i("CALL $error_push");
+    print_i("JUMPIFEQ $inputs_set_empty TF@res bool@true");
     print_i("PUSHS %s", inputStringVarName);
+    print_i("LABEL $inputs_next");
     print_i("POPFRAME");
     print_i("RETURN");
+    print_i("LABEL $inputs_set_empty");
+    print_i("DEFVAR TF@strRet");
+    print_i("MOVE TF@strRet string@");
+    print_i("PUSHS TF@strRet");
+    print_i("JUMP $inputs_next");
 }
 
 void declare_inputi()
@@ -528,9 +535,16 @@ void declare_inputi()
     print_i("DEFVAR TF@res");
     print_i("EQ TF@res %s string@nil", typeName);
     print_i("CALL $error_push");
+    print_i("JUMPIFEQ $inputi_set_empty TF@res bool@true");
     print_i("PUSHS %s", inputIntVarName);
+    print_i("LABEL $inputi_next");
     print_i("POPFRAME");
     print_i("RETURN");
+    print_i("LABEL $inputi_set_empty");
+    print_i("DEFVAR TF@intRet");
+    print_i("MOVE TF@intRet int@0");
+    print_i("PUSHS TF@intRet");
+    print_i("JUMP $inputi_next");
 }
 
 void declare_inputf()
@@ -546,9 +560,16 @@ void declare_inputf()
     print_i("DEFVAR TF@res");
     print_i("EQ TF@res %s string@nil", typeName);
     print_i("CALL $error_push");
+    print_i("JUMPIFEQ $inputf_set_empty TF@res bool@true");
     print_i("PUSHS %s", inputFloatVarName);
+    print_i("LABEL $inputf_next");
     print_i("POPFRAME");
     print_i("RETURN");
+    print_i("LABEL $inputf_set_empty");
+    print_i("DEFVAR TF@floatRet");
+    print_i("MOVE TF@floatRet float@0x0p+0");
+    print_i("PUSHS TF@floatRet");
+    print_i("JUMP $inputf_next");
 }
 
 void declare_int2float()
