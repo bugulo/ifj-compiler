@@ -499,6 +499,9 @@ expResult expression(Vector *symtableVector, htab_t *funcTable)
     //check for func
     if (inputToken.type == TOKEN_IDENTIFIER)
     {
+        //special case of underscore
+        if(strcmp("_", inputToken.value.s.ptr) == 0)
+            throw_error_fatal(SYNTAX_ERROR, "%s", "Can't use _ in expression");
         if (isVarDefined(getSymTableForVar(symtableVector, inputToken.value.s.ptr), inputToken.value.s.ptr) == false)
         {
             if (isFuncDefined(funcTable, inputToken.value.s.ptr) == true)
