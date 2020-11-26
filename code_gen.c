@@ -447,9 +447,9 @@ void call_function(char *name, Vector *call_params, Vector *return_params, Vecto
     }
     print_i("PUSHFRAME");
     print_i("CALL %s", name);
-    for (unsigned i = 1; i <= vectorLength(return_params); i++)
+    for (unsigned i = 0; i < vectorLength(return_params); i++)
     {
-        tmpVar.name.ptr = vectorGet(return_params, vectorLength(return_params) - i);
+        tmpVar.name.ptr = vectorGet(return_params, i);
         if (strcmp(tmpVar.name.ptr, "_") == 0)
         {
             TokenValue emptyVal;
@@ -472,9 +472,9 @@ void return_function(Vector *return_params, Vector *varScopeVec)
     char *paramString;
     Var tmpVar;
     tmpVar.frame = LOCAL_FRAME;
-    for (unsigned i = 0; i < vectorLength(return_params); i++)
+    for (unsigned i = 1; i <= vectorLength(return_params); i++)
     {
-        tmpVar.name.ptr = vectorGet(return_params, i);
+        tmpVar.name.ptr = vectorGet(return_params, vectorLength(return_params) - i);
         paramString = variableToString(tmpVar, varScopeVec);
         print_i("PUSHS %s", paramString);
         free(paramString);
@@ -507,10 +507,10 @@ void declare_inputs()
     char *typeName = "TF@type";
     print_i("DEFVAR %s", typeName);
     print_i("TYPE %s %s", typeName, inputStringVarName);
-    print_i("PUSHS %s", inputStringVarName);
     print_i("DEFVAR TF@res");
     print_i("EQ TF@res %s string@nil", typeName);
     print_i("CALL $error_push");
+    print_i("PUSHS %s", inputStringVarName);
     print_i("POPFRAME");
     print_i("RETURN");
 }
@@ -525,10 +525,10 @@ void declare_inputi()
     char *typeName = "TF@type";
     print_i("DEFVAR %s", typeName);
     print_i("TYPE %s %s", typeName, inputIntVarName);
-    print_i("PUSHS %s", inputIntVarName);
     print_i("DEFVAR TF@res");
     print_i("EQ TF@res %s string@nil", typeName);
     print_i("CALL $error_push");
+    print_i("PUSHS %s", inputIntVarName);
     print_i("POPFRAME");
     print_i("RETURN");
 }
@@ -543,10 +543,10 @@ void declare_inputf()
     char *typeName = "TF@type";
     print_i("DEFVAR %s", typeName);
     print_i("TYPE %s %s", typeName, inputFloatVarName);
-    print_i("PUSHS %s", inputFloatVarName);
     print_i("DEFVAR TF@res");
     print_i("EQ TF@res %s string@nil", typeName);
     print_i("CALL $error_push");
+    print_i("PUSHS %s", inputFloatVarName);
     print_i("POPFRAME");
     print_i("RETURN");
 }
@@ -628,8 +628,8 @@ void declare_ord()
     print_i("STRI2INT %s %s %s", c, s, i);
 
     print_i("LABEL $ord_end");
-    print_i("PUSHS %s", c);
     print_i("CALL $error_push");
+    print_i("PUSHS %s", c);
     print_i("POPFRAME");
     print_i("RETURN");
 }
@@ -660,8 +660,8 @@ void declare_chr()
     print_i("INT2CHAR %s %s", c, i);
 
     print_i("LABEL $chr_end");
-    print_i("PUSHS %s", c);
     print_i("CALL $error_push");
+    print_i("PUSHS %s", c);
     print_i("POPFRAME");
     print_i("RETURN");
 }
@@ -719,6 +719,7 @@ void declare_substr()
 
     print_i("DEFVAR %s", c);
     // while(i < n)
+    print_i("JUMPIFEQ $substr_end %s int@0", n);
     print_i("LABEL $substr_start");
     print_i("MOVE %s string@", c);
     print_i("GETCHAR %s %s %s", c, s, i);
@@ -728,8 +729,8 @@ void declare_substr()
     print_i("JUMPIFNEQ $substr_start %s int@0", n);
 
     print_i("LABEL $substr_end");
-    print_i("PUSHS %s", finalString);
     print_i("PUSHS TF@errInt");
+    print_i("PUSHS %s", finalString);
     print_i("POPFRAME");
     print_i("RETURN");
 }
@@ -843,9 +844,9 @@ void for_body()
     unsigned *tmpCnt = vectorGet(for_count_stack, vectorLength(for_count_stack) - 1);
     print_i("JUMP $for_start%d", *tmpCnt);
     print_i("LABEL $for_body_start%d", *tmpCnt);
-    #ifdef DEBUG
-        print("`For` body, watch out for the end !! (id: %d)", *tmpCnt);
-    #endif
+#ifdef DEBUG
+    print("`For` body, watch out for the end !! (id: %d)", *tmpCnt);
+#endif
 }
 
 void for_end()
@@ -853,9 +854,9 @@ void for_end()
     unsigned *tmpCnt = vectorPop(for_count_stack);
     print_i("JUMP $for_assign%d", *tmpCnt);
     print_i("LABEL $for_def%d", *tmpCnt);
-    #ifdef DEBUG
-        print("Ending `for`. (id: %d)", *tmpCnt);
-    #endif
+#ifdef DEBUG
+    print("Ending `for`. (id: %d)", *tmpCnt);
+#endif
     char *defVarString;
     if (vectorLength(for_count_stack) == 0)
     {
