@@ -10,13 +10,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "string.h"
 #include "error.h"
+#include "file.h"
 
-FILE *source = NULL;
+dynamicArr *source = NULL;
 
-void scanner_set_file(FILE *file) {
+void scanner_set_file(dynamicArr *file) {
     source = file;
 }
 
@@ -30,8 +32,7 @@ typedef enum {
     STATE_EXPONENT_SIGN,
     STATE_EXPONENT_START,
     STATE_EXPONENT,
-    STATE_STRING,
-    STATE_NEWLINE
+    STATE_STRING
 } State;
 
 KeywordType get_keyword_type(String string) {
@@ -47,7 +48,7 @@ KeywordType get_keyword_type(String string) {
     else return KEYWORD_NONE;
 }
 
-bool string_to_integer(String string, int *number) {
+bool string_to_integer(String string, int64_t *number) {
     char *endptr;
 	*number = strtol(string.ptr, &endptr, 10);
     return *endptr == '\0';
@@ -68,11 +69,12 @@ void scanner_get_token(Token *token) {
         result = RESULT_ERROR;
 
     while(result == RESULT_NONE) {
-        int c = getc(source);
+        int c = arrGetc(source);
 
         if(state == STATE_START) {
             if(c == '\n') {
-                state = STATE_NEWLINE;
+                token->type = TOKEN_EOL;
+                result = RESULT_OK;
             } else if(c == EOF) {
                 token->type = TOKEN_EOF;
                 result = RESULT_OK;
@@ -104,7 +106,7 @@ void scanner_get_token(Token *token) {
                 token->type = TOKEN_MUL;
                 result = RESULT_OK;
             } else if(c == ':') {
-                char c1 = getc(source);
+                char c1 = arrGetc(source);
 
                 if(c1 == '=') {
                     token->type = TOKEN_DECLARATION;
@@ -112,7 +114,7 @@ void scanner_get_token(Token *token) {
                 } else 
                     result = RESULT_ERROR;
             } else if(c == '!') {
-                char c1 = getc(source);
+                char c1 = arrGetc(source);
 
                 if(c1 == '=') {
                     token->type = TOKEN_NOT_EQUALS;
@@ -120,7 +122,7 @@ void scanner_get_token(Token *token) {
                 } else 
                     result = RESULT_ERROR;
             } else if(c == '=') {
-                char c1 = getc(source);
+                char c1 = arrGetc(source);
 
                 if(c1 == '=') {
                     token->type = TOKEN_EQUALS;
@@ -128,10 +130,10 @@ void scanner_get_token(Token *token) {
                 } else {
                     token->type = TOKEN_ASSIGNMENT;
                     result = RESULT_OK;
-                    ungetc(c1, source);
+                    arrUnGetc(source);
                 }
             } else if(c == '<') {
-                char c1 = getc(source);
+                char c1 = arrGetc(source);
 
                 if(c1 == '=') {
                     token->type = TOKEN_LESS_EQ;
@@ -139,10 +141,10 @@ void scanner_get_token(Token *token) {
                 } else {
                     token->type = TOKEN_LESS;
                     result = RESULT_OK;
-                    ungetc(c1, source);
+                    arrUnGetc(source);
                 }
             } else if(c == '>') {
-                char c1 = getc(source);
+                char c1 = arrGetc(source);
 
                 if(c1 == '=') {
                     token->type = TOKEN_GREATER_EQ;
@@ -150,7 +152,7 @@ void scanner_get_token(Token *token) {
                 } else {
                     token->type = TOKEN_GREATER;
                     result = RESULT_OK;
-                    ungetc(c1, source);
+                    arrUnGetc(source);
                 }
             } else if(isalpha(c) || c == '_') {
                 if(string_append_char(&string, c))
@@ -158,7 +160,7 @@ void scanner_get_token(Token *token) {
                 else
                     result = RESULT_ERROR;
             } else if(c == '/') {
-                char c1 = getc(source);
+                char c1 = arrGetc(source);
 
                 if(c1 == '/')
                     state = STATE_COMMENT_LINE;
@@ -167,7 +169,7 @@ void scanner_get_token(Token *token) {
                 else {
                     token->type = TOKEN_DIV;
                     result = RESULT_OK;
-                    ungetc(c1, source);
+                    arrUnGetc(source);
                 }
             } else if(isdigit(c)) {
                 if(string_append_char(&string, c))
@@ -178,12 +180,6 @@ void scanner_get_token(Token *token) {
                 state = STATE_STRING;
             } else if(!isspace(c)) {
                 result = RESULT_ERROR;
-            }
-        } else if(state == STATE_NEWLINE) {
-            if(!isspace(c)) {
-                token->type = TOKEN_EOL;
-                result = RESULT_OK;
-                ungetc(c, source);
             }
         } else if(state == STATE_IDENTIFIER) {
             if(isalnum(c) || c == '_') {
@@ -202,32 +198,32 @@ void scanner_get_token(Token *token) {
                     } else 
                         result = RESULT_ERROR;
                 }
-                ungetc(c, source);
+                arrUnGetc(source);
             }
         } else if(state == STATE_COMMENT_LINE) {
             if(c == '\n' || c == EOF) {
                 state = STATE_START;
-                ungetc(c, source);
+                arrUnGetc(source);
             }
         } else if(state == STATE_COMMENT_BLOCK) {
-            char c1 = getc(source);
+            char c1 = arrGetc(source);
 
             if(c == '*' && c1 == '/')
                 state = STATE_START;
             else if(c == EOF)
                 result = RESULT_ERROR;
             else
-                ungetc(c1, source);
+                arrUnGetc(source);
         } else if(state == STATE_INTEGER) {
             if(isdigit(c)) {
                 if(!string_append_char(&string, c))
                     result = RESULT_ERROR;
             } else if(c == '.') {
-                char c1 = getc(source);
+                char c1 = arrGetc(source);
 
                 if((string.ptr[0] != '0' || string_compare(&string, "0")) && isdigit(c1) && string_append_char(&string, c)) {
                     state = STATE_DECIMAL;
-                    ungetc(c1, source);
+                    arrUnGetc(source);
                 } else 
                     result = RESULT_ERROR;
             } else if(c == 'e' || c == 'E') {
@@ -236,12 +232,12 @@ void scanner_get_token(Token *token) {
                 else 
                     result = RESULT_ERROR;
             } else {
-                int number;
+                int64_t number;
                 if((string.ptr[0] != '0' || string_compare(&string, "0")) && string_to_integer(string, &number)) {
                     token->type = TOKEN_NUMBER_INT;
                     token->value.i = number;
                     result = RESULT_OK;
-                    ungetc(c, source);
+                    arrUnGetc(source);
                 } else
                     result = RESULT_ERROR;
             }
@@ -260,7 +256,7 @@ void scanner_get_token(Token *token) {
                     token->type = TOKEN_NUMBER_FLOAT;
                     token->value.d = number;
                     result = RESULT_OK;
-                    ungetc(c, source);
+                    arrUnGetc(source);
                 } else
                     result = RESULT_ERROR;
             }
@@ -272,25 +268,25 @@ void scanner_get_token(Token *token) {
                     result = RESULT_ERROR;
             } else if(isdigit(c)) {
                 state = STATE_EXPONENT_START;
-                ungetc(c, source);
+                arrUnGetc(source);
             } else
                 result = RESULT_ERROR;
         } else if(state == STATE_EXPONENT_START) {
-            char c1 = getc(source);
+            char c1 = arrGetc(source);
 
             if(isdigit(c) && c == '0' && !isdigit(c1)) {
                 state = STATE_EXPONENT;
-                ungetc(c1, source);
-                ungetc(c, source);
+                arrUnGetc(source);
+                arrUnGetc(source);
             } else if(isdigit(c) && c == '0' && isdigit(c1) && c != '0') {
                 state = STATE_EXPONENT;
-                ungetc(c1, source);
+                arrUnGetc(source);
             } else if(isdigit(c) && c != '0') {
                 state = STATE_EXPONENT;
-                ungetc(c1, source);
-                ungetc(c, source);
+                arrUnGetc(source);
+                arrUnGetc(source);
             } else if(c == '0') {
-                ungetc(c1, source);
+                arrUnGetc(source);
             } else 
                 result = RESULT_ERROR;
         } else if(state == STATE_EXPONENT) {
@@ -303,13 +299,13 @@ void scanner_get_token(Token *token) {
                     token->type = TOKEN_NUMBER_FLOAT;
                     token->value.d = number;
                     result = RESULT_OK;
-                    ungetc(c, source);
+                    arrUnGetc(source);
                 } else
                     result = RESULT_ERROR;
             }
         } else if(state == STATE_STRING) {
             if(c == '\\') {
-                char c1 = getc(source);
+                char c1 = arrGetc(source);
 
                 if(c1 == '"' || c1 == '\\') {
                     if(string_append_char(&string, c1))
@@ -327,8 +323,8 @@ void scanner_get_token(Token *token) {
                     else 
                         result = RESULT_ERROR;
                 } else if(c1 == 'x') {
-                    char c2 = toupper(getc(source));
-                    char c3 = toupper(getc(source));
+                    char c2 = toupper(arrGetc(source));
+                    char c3 = toupper(arrGetc(source));
 
                     if((isdigit(c2) || (c2 >= 'A' && c2 <= 'F')) && (isdigit(c3) || (c3 >= 'A' && c3 <= 'F'))) {
                         char combined = (c2 >= 'A' ? c2 - 'A' + 10 : c2 - '0') * 16 + (c3 >= 'A' ? c3 - 'A' + 10 : c3 - '0');
@@ -350,8 +346,10 @@ void scanner_get_token(Token *token) {
             } else if(c >= 32) {
                 if(!string_append_char(&string, c))
                     result = RESULT_ERROR;
-            } else 
+            } else {
+                printf("%d", c);
                 result = RESULT_ERROR;
+            }
         }
     }
 

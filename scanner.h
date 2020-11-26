@@ -6,9 +6,10 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include <stdio.h>
+#include <stdint.h>
 
 #include "string.h"
+#include "file.h"
 
 typedef enum {
     RESULT_NONE,
@@ -76,7 +77,7 @@ typedef enum {
 } TokenType;
 
 typedef union {
-    int i;
+    int64_t i;
     double d;
     String s;
     KeywordType k;
@@ -92,7 +93,7 @@ typedef struct {
  * 
  * @param file File pointer
  */
-void scanner_set_file(FILE *file);
+void scanner_set_file(dynamicArr *file);
 
 /**
  * Parse and retrieve token

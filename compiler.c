@@ -16,9 +16,17 @@
 #include "code_gen.h"
 #include "semantic_analysis.h"
 
+#include "scanner.h"
+#include "parser.h"
+
+#include "scanner.h"
+#include "parser.h"
+#include "file.h"
+
 int main(int argc, char **argv)
 {
-    gen_init();
+    parse();
+    /*gen_init();
     Vector *varScopeVec = vectorInit();
     insertLocalSymTable(varScopeVec);
     TokenValue sampleStringVal;
@@ -48,11 +56,10 @@ int main(int argc, char **argv)
     vectorPush(input, "a");
     vectorPush(input, "b");
     vectorPush(input, "c");
-    /*
     func f (int a, int b, int c) (int, int) {
     }
     */
-    declare_function("f", input, varScopeVec);
+    /*declare_function("f", input, varScopeVec);
 
     insertLocalSymTable(varScopeVec);
     defineUserVar(getLocalSymTable(varScopeVec), "int1", INTEGER, sampleStringVal, false);
@@ -84,26 +91,24 @@ int main(int argc, char **argv)
     call_function("f", input, returnParams, varScopeVec);
 
     removeLocalSymTable(varScopeVec);
-    /*
     if(res) {
         c = a + b;
     } else {
         c = a - b;
     }
     */
-    String tmpVar = defineCompilerVar(getLocalSymTable(varScopeVec), INTEGER, sampleStringVal, false);
+    /*String tmpVar = defineCompilerVar(getLocalSymTable(varScopeVec), INTEGER, sampleStringVal, false);
 
     if_start(tmpVar.ptr, varScopeVec);
     printf("ADD c a b\n");
     if_core();
     printf("SUB c a b\n");
     if_end();
-    /*
     for i := 0; i < j; i++ {
         sum += i;
     }
     */
-    defineUserVar(getLocalSymTable(varScopeVec), "sampleString", INTEGER, sampleStringVal, true);
+    /*defineUserVar(getLocalSymTable(varScopeVec), "sampleString", INTEGER, sampleStringVal, true);
     insertLocalSymTable(varScopeVec);
     for_start();
     tmpVar = defineCompilerVar(getLocalSymTable(varScopeVec), INTEGER, sampleStringVal, false);
@@ -118,6 +123,6 @@ int main(int argc, char **argv)
     Symb op1 = {.isVar = false, .token.type = TOKEN_NUMBER_FLOAT, .token.value.d = 1.0 / 9};
     Symb op2 = {.isVar = false, .token.type = TOKEN_NUMBER_FLOAT, .token.value.d = 1.0 / 27};
     ADD(dest, op1, op2, false, varScopeVec);
-    for_end();
+    for_end();*/
     return 0;
 }
