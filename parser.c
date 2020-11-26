@@ -339,9 +339,10 @@ bool ruleStat(ParserData *data) {
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
 
         Var exp_result = {.name = result.result, .frame = TEMP_FRAME};
-        for_body(exp_result, data->scopes);
-
+        for_expression(exp_result, data->scopes);
+        for_assign_start();
         ruleForAssign(data);
+        for_body();
 
         if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
             throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);

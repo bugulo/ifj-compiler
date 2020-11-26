@@ -98,7 +98,7 @@ void AND(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec);
 void OR(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec);
 
 //NOT ⟨var⟩ ⟨symb1⟩ ⟨symb2⟩
-void NOT(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec);
+void NOT(Var dest, Symb op1, bool useStack, Vector *varScopeVec);
 
 /*______________TYPE_CASTING_OPERATIONS_______________*/
 
@@ -126,6 +126,25 @@ void return_function(Vector *return_params, Vector *varScopeVec);
 
 void print_i(const char *fmt, ...);
 
+/*_______________DATA_TYPES_OPERATIONS________________*/
+
+//TYPE ⟨var⟩ ⟨symb⟩
+void TYPE(Var dest, Symb op, Vector *varScopeVec);
+
+/*_______________STRING_OPERATIONS________________*/
+
+//CONCAT ⟨var⟩ ⟨symb1⟩ ⟨symb2⟩
+void CONCAT(Var dest, Symb op1, Symb op2, Vector *varScopeVec);
+
+//STRLEN ⟨var⟩ ⟨symb⟩
+void STRLEN(Var dest, Symb op, Vector *varScopeVec);
+
+//GETCHAR ⟨var⟩ ⟨symb1⟩ ⟨symb2⟩
+void GETCHAR(Var dest, Symb op1, Symb op2, Vector *varScopeVec);
+
+//SETCHAR ⟨var⟩ ⟨symb1⟩ ⟨symb2⟩
+void SETCHAR(Var dest, Symb op1, Symb op2, Vector *varScopeVec);
+
 /*_______________CONDITIONALS________________*/
 // This is the first part of if
 void if_start(char *result, Vector *varScopeVec);
@@ -139,8 +158,12 @@ void if_end();
 // Inital for part, remeber to have all needed variables in a frame
 void for_start();
 
+void for_expression(Var res, Vector *varScopeVec);
+
+void for_assign_start();
+
 // Body of a for cycle, `res` is result of a test expression
-void for_body(Var res, Vector *varScopeVec);
+void for_body();
 
 // Final part of the for cycle
 void for_end();

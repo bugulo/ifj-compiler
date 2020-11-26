@@ -84,6 +84,17 @@ void setVarConst(htab_t *symTable, htab_key_t name, bool isConst)
     }
 }
 
+unsigned getVarCnt(htab_t *symTable, htab_key_t name)
+{
+    htab_iterator_t tmp = htab_find(symTable, name);
+    if (tmp.ptr != NULL)
+    {
+        if(tmp.ptr->isVar == true)
+            return tmp.ptr->varCnt;
+    }
+    return 0;
+}
+
 varDataType checkOperationTypes(Vector *tableVector, Token var1, Token var2)
 {
     #ifdef DEBUG
@@ -127,7 +138,7 @@ String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue v
     static int cnt = 0;
     String varName;
     string_init(&varName);
-    string_append_string(&varName, "Expression");
+    string_append_string(&varName, "Expression$");
 
     //count length of number
     int length = snprintf(NULL, 0, "%d", cnt);
@@ -145,9 +156,10 @@ String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue v
         tmp.ptr->varDataType = varDataType;
         tmp.ptr->isVarUsedDefined = false;
         if (isConst == true)
-            tmp.ptr->varValue = varValue;
+            tmp.ptr->varValue = varValue;      
         tmp.ptr->isConst = isConst;
         tmp.ptr->isVar = true;
+        tmp.ptr->varCnt = 0;
         cnt++;
         return varName;
     }
@@ -157,6 +169,7 @@ String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue v
 
 void defineUserVar(htab_t *symTable, htab_key_t name, varDataType varDataType, TokenValue varValue, bool isConst)
 {
+    static unsigned varCnt = 0;
     htab_iterator_t tmp = htab_insert(symTable, name);
     if (tmp.ptr != NULL)
     {
@@ -167,9 +180,10 @@ void defineUserVar(htab_t *symTable, htab_key_t name, varDataType varDataType, T
             tmp.ptr->varValue = varValue;
         tmp.ptr->isConst = isConst;
         tmp.ptr->isVar = true;
+        tmp.ptr->varCnt = varCnt++;
     }
     else
-        throw_error_fatal(DEFINITION_ERROR, "%s", "Multiple definitions of variable");
+        throw_error_fatal(DEFINITION_ERROR, "%s %s", "Multiple definitions of variable", name);
 }
 
 bool isVarUserDefined(htab_t *symTable, htab_key_t name)
@@ -213,7 +227,8 @@ void removeVar(htab_t *symTable, htab_key_t name)
     {
         if(tmp.ptr->isVar == true){
             if (tmp.ptr->varDataType == STRING)
-                string_free(&tmp.ptr->varValue.s);
+                if(tmp.ptr->isConst == true)
+                    string_free(&tmp.ptr->varValue.s);
             htab_erase(symTable, tmp);
         }
     }

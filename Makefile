@@ -6,7 +6,7 @@
 # Erik Belko, xbelko02
 
 CC = gcc
-CFLAGS = -g -std=c99 -pedantic -Wall -Wextra
+CFLAGS = -g -std=c99 -pedantic -Wall -Wextra -Wno-discarded-qualifiers
 MODULES = symtable.o string.o scanner.o error.o stack.o parser.o vector.o expression.o semantic_analysis.o file.o code_gen.o #   <----- aj tuto pridavajte moduly
 
 CFLAGS += $(DEBUG)
