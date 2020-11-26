@@ -483,6 +483,15 @@ void ruleStatBody(ParserData *data, Token id) {
             if(!checkTypes(getFuncReturnTypes(data->table, function.ptr), ltypes))
                 throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call return");
 
+            for(unsigned i = 0; i < lnames->length; i++) {
+                char *target_name = (char *) vectorGet(lnames, i);
+
+                if(strcmp(target_name, "_") != 0) {
+                    htab_t *scope = getSymTableForVar(data->scopes, target_name);
+                    setVarConst(scope, target_name, false);
+                }
+            }
+
             call_function(function.ptr, names, lnames, data->scopes);
         } else {
             Vector *rtypes = vectorInit();
