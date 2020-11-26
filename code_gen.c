@@ -56,9 +56,14 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
         for (int i = 0, j = 0; i < stringLength; i++)
         {
             int c = symbol.token.value.s.ptr[i];
-            if ((c >= 0 && c <= 32) || c == 35 || c == 92)
+            if ((c >= 10 && c <= 32) || c == 35 || c == 92)
             {
                 int printLen = snprintf(newEscapedString + j, 5, "\\0%d", c);
+                j += printLen;
+            }
+            else if (c >= 0 && c < 10)
+            {
+                int printLen = snprintf(newEscapedString + j, 5, "\\00%d", c);
                 j += printLen;
             }
             else
