@@ -424,7 +424,7 @@ char *createNilVar()
     static unsigned counter = 0;
     int varLength = snprintf(NULL, 0, formatString, counter);
     char *varName = malloc(varLength * sizeof(char));
-    sprintf(varName, formatString, counter);
+    sprintf(varName, formatString, counter++);
     if (varName == NULL)
         throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
     return varName;
@@ -840,23 +840,22 @@ void for_assign_start()
 
 void for_body()
 {
-#ifdef DEBUG
-    print("`For` body, watch out for the end !! (id: %d)", label_counter);
-#endif
     unsigned *tmpCnt = vectorGet(for_count_stack, vectorLength(for_count_stack) - 1);
     print_i("JUMP $for_start%d", *tmpCnt);
     print_i("LABEL $for_body_start%d", *tmpCnt);
+    #ifdef DEBUG
+        print("`For` body, watch out for the end !! (id: %d)", *tmpCnt);
+    #endif
 }
 
 void for_end()
 {
-#ifdef DEBUG
-    print("Ending `for`. (id: %d)", label_counter);
-#endif
     unsigned *tmpCnt = vectorPop(for_count_stack);
     print_i("JUMP $for_assign%d", *tmpCnt);
     print_i("LABEL $for_def%d", *tmpCnt);
-
+    #ifdef DEBUG
+        print("Ending `for`. (id: %d)", *tmpCnt);
+    #endif
     char *defVarString;
     if (vectorLength(for_count_stack) == 0)
     {

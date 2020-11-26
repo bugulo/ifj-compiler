@@ -183,7 +183,7 @@ void defineUserVar(htab_t *symTable, htab_key_t name, varDataType varDataType, T
         tmp.ptr->varCnt = varCnt++;
     }
     else
-        throw_error_fatal(DEFINITION_ERROR, "%s", "Multiple definitions of variable");
+        throw_error_fatal(DEFINITION_ERROR, "%s %s", "Multiple definitions of variable", name);
 }
 
 bool isVarUserDefined(htab_t *symTable, htab_key_t name)

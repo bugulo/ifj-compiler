@@ -521,11 +521,11 @@ expResult expression(Vector *symtableVector, htab_t *funcTable)
     while (stackPeek(stack).type != TOKEN_NONE || inputToken.type != TOKEN_NONE)
     {
         //check if var is defined
-        if(inputToken.type == TOKEN_IDENTIFIER)
+        /*if(inputToken.type == TOKEN_IDENTIFIER)
         {
             if (isVarDefined(getSymTableForVar(symtableVector, inputToken.value.s.ptr), inputToken.value.s.ptr) == false)
                 throw_error_fatal(DEFINITION_ERROR, "%s", "Variable is not defined");
-        }
+        }*/
         //detect end of expression
         if (isEndToken(inputToken) == true)
         {
