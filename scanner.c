@@ -210,7 +210,7 @@ void scanner_get_token(Token *token) {
 
             if(c == '*' && c1 == '/')
                 state = STATE_START;
-            else if(c == EOF)
+            else if(c == EOF || c1 == EOF)
                 result = RESULT_ERROR;
             else
                 arrUnGetc(source);
