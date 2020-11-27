@@ -10,13 +10,13 @@ func main() {
 			} else {
 				print("+")
 			}
-			j = inc(j)
+			j = INC(j)
 		}
-		i = inc(i)
+		i = INC(i)
 		print("\n")
 	}
 }
 
-func inc(i int) (int){
+func INC(i int) (int){
 	return i + 1
 }
