@@ -50,7 +50,7 @@ KeywordType get_keyword_type(String string) {
 
 bool string_to_integer(String string, int64_t *number) {
     char *endptr;
-	*number = strtol(string.ptr, &endptr, 10);
+	*number = strtoll(string.ptr, &endptr, 10);
     return *endptr == '\0';
 }
 
