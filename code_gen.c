@@ -213,6 +213,7 @@ void DIV(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec)
         char *destString = variableToString(dest, varScopeVec);
         char *op1String = symbolToString(op1, varScopeVec);
         char *op2String = symbolToString(op2, varScopeVec);
+        print_i("JUMPIFEQ $err_div_by_zero %s float@0x0p+0", op2String);
         print_i("%s %s %s %s", "DIV", destString, op1String, op2String);
         free(destString);
         free(op1String);
@@ -229,6 +230,7 @@ void IDIV(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec)
         char *destString = variableToString(dest, varScopeVec);
         char *op1String = symbolToString(op1, varScopeVec);
         char *op2String = symbolToString(op2, varScopeVec);
+        print_i("JUMPIFEQ $err_div_by_zero %s int@0", op2String);
         print_i("%s %s %s %s", "IDIV", destString, op1String, op2String);
         free(destString);
         free(op1String);
@@ -785,6 +787,8 @@ void gen_init()
     declare_substr();
     declare_ord();
     declare_chr();
+    print_i("LABEL $err_div_by_zero");
+    print_i("EXIT int@9");
 }
 
 void DEFVAR(Var id, Vector *varScopeVec)
