@@ -59,7 +59,11 @@ int arrGetc(dynamicArr *arr)
             }
 
             else
+            {
+                arr->position++;
                 return EOF;
+            }
+                
         }
     }
     return ARR_ERROR;
