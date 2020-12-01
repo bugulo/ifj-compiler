@@ -10,6 +10,8 @@
 #include "scanner.h"
 #include "error.h"
 #include "semantic_analysis.h"
+#include <inttypes.h>
+
 
 #define FRAME_TAG_LEN 3
 
@@ -81,7 +83,7 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
 
     if (symbol.token.type == TOKEN_NUMBER_INT)
     {
-        char *formatString = "int@%d";
+        char *formatString = "int@%" PRId64 "";
         int length = snprintf(NULL, 0, formatString, symbol.token.value.i);
         finalString = malloc(sizeof(char) * length + 1);
         if (finalString == NULL)
@@ -91,7 +93,7 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
 
     if (symbol.token.type == TOKEN_NUMBER_FLOAT)
     {
-        char *formatString = "float@%a";
+        char *formatString = "float@%la";
         int length = snprintf(NULL, 0, formatString, symbol.token.value.d);
         finalString = malloc(sizeof(char) * length + 1);
         if (finalString == NULL)
