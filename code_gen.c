@@ -432,7 +432,7 @@ char *createNilVar()
     char *formatString = "nilVar%d";
     static unsigned counter = 0;
     int varLength = snprintf(NULL, 0, formatString, counter);
-    char *varName = malloc(varLength * sizeof(char));
+    char *varName = malloc(varLength * sizeof(char) + 1);
     sprintf(varName, formatString, counter++);
     if (varName == NULL)
         throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");

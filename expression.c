@@ -508,6 +508,7 @@ expResult expression(Vector *symtableVector, htab_t *funcTable)
             {
                 result.isFunc = true;
                 result.newToken = inputToken;
+                stackFree(stack);
                 return result;
             } 
             else 
@@ -519,6 +520,7 @@ expResult expression(Vector *symtableVector, htab_t *funcTable)
     {
         result.isEmpty = true;
         result.newToken = inputToken;
+        stackFree(stack);
         return result;
     }
     while (stackPeek(stack).type != TOKEN_NONE || inputToken.type != TOKEN_NONE)
