@@ -20,14 +20,17 @@
 
 typedef struct {
     bool isFirstScan;
+    dynamicArr *file;
     htab_t *table;
     Vector *scopes;
+    Vector *strings;
     Token token;
     Stack *stack;
-    Stack *tokens;
     bool inFunction;
     bool returned;
     String function;
+    Vector *vectors;
+    Vector *type_vectors;
 } ParserData;
 
 void parse();
