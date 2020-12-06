@@ -1,7 +1,7 @@
-// IFJ20
-// Autors:
-// Mario Harvan, xharva03
-// Tieto funkcie boli skopírované z projektu IJC
+/* IFJ20 - Hash table library (Tento modul bol prevzatý z predmetu IJC, projekt 2. Hlavičkový súbor bol súčasťou zadania a bol upravený autorom tohto súboru) 
+ * Authors:
+ * Mario Harvan, xharva03
+ */
 
 #ifndef SYMTABLE_H_
 #define SYMTABLE_H_

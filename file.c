@@ -29,6 +29,8 @@ dynamicArr *arrInit()
     if (tmp == NULL)
         throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
     tmp->arr = malloc(sizeof(char) * DEFAULT_ARR_SIZE);
+    if (tmp->arr == NULL)
+        throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
     tmp->size = DEFAULT_ARR_SIZE;
     tmp->length = 0;
     tmp->position = 0;

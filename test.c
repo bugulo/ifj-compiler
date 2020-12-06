@@ -9,7 +9,6 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#include "dataTypes.h"
 #include "symtable.h"
 #include "string.h"
 #include "test.h"

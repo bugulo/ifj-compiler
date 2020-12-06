@@ -7,12 +7,12 @@
 
 bool isVarDefined(htab_t *symTable, htab_key_t name)
 {
-    if(symTable != NULL)
+    if (symTable != NULL)
     {
         htab_iterator_t tmp = htab_find(symTable, name);
         if (tmp.ptr != NULL)
         {
-            if(tmp.ptr->isVar == true)
+            if (tmp.ptr->isVar == true)
                 return true;
         }
     }
@@ -24,7 +24,7 @@ varDataType getVarType(htab_t *symTable, htab_key_t name)
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true)
+        if (tmp.ptr->isVar == true)
             return tmp.ptr->varDataType;
     }
     return NONE;
@@ -35,30 +35,30 @@ void setVarType(htab_t *symTable, htab_key_t name, varDataType varDataType)
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true)
+        if (tmp.ptr->isVar == true)
             tmp.ptr->varDataType = varDataType;
     }
 }
 
-TokenValue getVarValue(htab_t* symTable, htab_key_t name)
+TokenValue getVarValue(htab_t *symTable, htab_key_t name)
 {
     TokenValue emptyVal;
     emptyVal.i = 0;
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true)
+        if (tmp.ptr->isVar == true)
             return tmp.ptr->varValue;
     }
     return emptyVal;
 }
 
-void setVarValue(htab_t* symTable, htab_key_t name, TokenValue value)
+void setVarValue(htab_t *symTable, htab_key_t name, TokenValue value)
 {
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true)
+        if (tmp.ptr->isVar == true)
             tmp.ptr->varValue = value;
     }
 }
@@ -68,7 +68,7 @@ bool isVarConst(htab_t *symTable, htab_key_t name)
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true)
+        if (tmp.ptr->isVar == true)
             return tmp.ptr->isConst;
     }
     return false;
@@ -79,7 +79,7 @@ void setVarConst(htab_t *symTable, htab_key_t name, bool isConst)
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true)
+        if (tmp.ptr->isVar == true)
             tmp.ptr->isConst = isConst;
     }
 }
@@ -89,7 +89,7 @@ unsigned getVarCnt(htab_t *symTable, htab_key_t name)
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true)
+        if (tmp.ptr->isVar == true)
             return tmp.ptr->varCnt;
     }
     return 0;
@@ -97,9 +97,6 @@ unsigned getVarCnt(htab_t *symTable, htab_key_t name)
 
 varDataType checkOperationTypes(Vector *tableVector, Token var1, Token var2)
 {
-    #ifdef DEBUG
-        print("var1 string: %s var2 string: %s", var1.value.s.ptr, var2.value.s.ptr);
-    #endif
     htab_iterator_t operator1;
     htab_iterator_t operator2;
 
@@ -116,16 +113,11 @@ varDataType checkOperationTypes(Vector *tableVector, Token var1, Token var2)
         throw_error_fatal(DEFINITION_ERROR, "%s", "Variable is undefined");
     operator2 = htab_find(tableForOp2, var2.value.s.ptr);
 
+    //check data types of both operators
     if (operator1.ptr != NULL && operator2.ptr != NULL)
     {
-        #ifdef DEBUG
-            print("Operator 1 token type: %d Operator 2 token type: %d", operator1.ptr->tokenType, operator2.ptr->tokenType);
-        #endif
         if (operator1.ptr->tokenType == TOKEN_IDENTIFIER && operator2.ptr->tokenType == TOKEN_IDENTIFIER)
         {
-            #ifdef DEBUG
-                print("Operator 1 data type: %d Operator 2 data type: %d", operator1.ptr->varDataType, operator2.ptr->varDataType);
-            #endif
             if (operator1.ptr->varDataType == operator2.ptr->varDataType)
                 return operator1.ptr->varDataType;
         }
@@ -135,20 +127,20 @@ varDataType checkOperationTypes(Vector *tableVector, Token var1, Token var2)
 
 String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue varValue, bool isConst)
 {
-    static int cnt = 0;
+    //temporary var idetificator
+    static unsigned cnt = 0;
     String varName;
     string_init(&varName);
     string_append_string(&varName, "Expression$");
-
     //count length of number
-    int length = snprintf(NULL, 0, "%d", cnt);
+    int length = snprintf(NULL, 0, "%u", cnt);
     char *tmpCnt = malloc(sizeof(char) * length + 1);
     if (tmpCnt == NULL)
         throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
-    sprintf(tmpCnt, "%d", cnt);
+    sprintf(tmpCnt, "%u", cnt);
     string_append_string(&varName, tmpCnt);
     free(tmpCnt);
-
+    //insert tmp var into symtable
     htab_iterator_t tmp = htab_insert(symTable, varName.ptr);
     if (tmp.ptr != NULL)
     {
@@ -156,7 +148,7 @@ String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue v
         tmp.ptr->varDataType = varDataType;
         tmp.ptr->isVarUsedDefined = false;
         if (isConst == true)
-            tmp.ptr->varValue = varValue;      
+            tmp.ptr->varValue = varValue;
         tmp.ptr->isConst = isConst;
         tmp.ptr->isVar = true;
         tmp.ptr->varCnt = 0;
@@ -169,6 +161,7 @@ String defineCompilerVar(htab_t *symTable, varDataType varDataType, TokenValue v
 
 void defineUserVar(htab_t *symTable, htab_key_t name, varDataType varDataType, TokenValue varValue, bool isConst)
 {
+    //variable identificator
     static unsigned varCnt = 0;
     htab_iterator_t tmp = htab_insert(symTable, name);
     if (tmp.ptr != NULL)
@@ -191,7 +184,7 @@ bool isVarUserDefined(htab_t *symTable, htab_key_t name)
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true)
+        if (tmp.ptr->isVar == true)
             return tmp.ptr->isVarUsedDefined;
     }
     return false;
@@ -225,9 +218,10 @@ void removeVar(htab_t *symTable, htab_key_t name)
     htab_iterator_t tmp = htab_find(symTable, name);
     if (tmp.ptr != NULL)
     {
-        if(tmp.ptr->isVar == true){
+        if (tmp.ptr->isVar == true)
+        {
             if (tmp.ptr->varDataType == STRING)
-                if(tmp.ptr->isConst == true)
+                if (tmp.ptr->isConst == true)
                     string_free(&tmp.ptr->varValue.s);
             htab_erase(symTable, tmp);
         }
@@ -242,8 +236,9 @@ htab_t *getSymTableForVar(Vector *tableVector, htab_key_t name)
     {
         htab_t *tmpTable = (htab_t *)vectorGet(tableVector, vecLength - i);
         tmp = htab_find(tmpTable, name);
-        if (tmp.ptr != NULL){
-            if(tmp.ptr->isVar == true)
+        if (tmp.ptr != NULL)
+        {
+            if (tmp.ptr->isVar == true)
                 return (htab_t *)tmp.t;
         }
     }
@@ -258,35 +253,44 @@ int getSymtableIdForVar(Vector *tableVector, htab_key_t name)
     {
         htab_t *tmpTable = (htab_t *)vectorGet(tableVector, vecLength - i);
         tmp = htab_find(tmpTable, name);
-        if (tmp.ptr != NULL){
-            if(tmp.ptr->isVar == true)
+        if (tmp.ptr != NULL)
+        {
+            if (tmp.ptr->isVar == true)
                 return vecLength - i;
         }
     }
     return EMPTY_SYMTABLE_ID;
 }
 
-htab_t *getLocalSymTable(Vector *tableVector){
-    if(tableVector != NULL){
-        if(vectorLength(tableVector) != 0){
-            return (htab_t *)vectorGet(tableVector,vectorLength(tableVector) - 1);
+htab_t *getLocalSymTable(Vector *tableVector)
+{
+    if (tableVector != NULL)
+    {
+        if (vectorLength(tableVector) != 0)
+        {
+            return (htab_t *)vectorGet(tableVector, vectorLength(tableVector) - 1);
         }
     }
     return NULL;
 }
 
-void insertLocalSymTable(Vector *tableVector){
-    if(tableVector != NULL){
+void insertLocalSymTable(Vector *tableVector)
+{
+    if (tableVector != NULL)
+    {
         htab_t *tmp = htab_init(SYM_TABLE_SIZE);
-        if(tmp == NULL) 
+        if (tmp == NULL)
             throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
-        vectorPush(tableVector, (void *) tmp);
+        vectorPush(tableVector, (void *)tmp);
     }
 }
 
-void removeLocalSymTable(Vector *tableVector){
-    if(tableVector != NULL){
-        if(vectorLength(tableVector) != 0){
+void removeLocalSymTable(Vector *tableVector)
+{
+    if (tableVector != NULL)
+    {
+        if (vectorLength(tableVector) != 0)
+        {
             htab_free((htab_t *)vectorPop(tableVector));
         }
     }
@@ -294,7 +298,8 @@ void removeLocalSymTable(Vector *tableVector){
 
 bool isFuncDefined(htab_t *symTable, htab_key_t name)
 {
-    if(symTable != NULL){
+    if (symTable != NULL)
+    {
         htab_iterator_t tmp = htab_find(symTable, name);
         if (tmp.ptr != NULL)
         {
@@ -305,32 +310,41 @@ bool isFuncDefined(htab_t *symTable, htab_key_t name)
     return false;
 }
 
-void addFuncType(Vector *types, varDataType varType){
-    if(types != NULL){
+void addFuncType(Vector *types, varDataType varType)
+{
+    if (types != NULL)
+    {
         varDataType *tmp = malloc(sizeof(varDataType));
-        if(tmp == NULL)
+        if (tmp == NULL)
             throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
         *tmp = varType;
-        vectorPush(types, (void *) tmp);
+        vectorPush(types, (void *)tmp);
     }
 }
 
-void removeFuncTypes(Vector *types){
-    if(types != NULL){
-        while(vectorLength(types) != 0){
-            varDataType *tmp = (varDataType *) vectorPop(types);
+void removeFuncTypes(Vector *types)
+{
+    if (types != NULL)
+    {
+        while (vectorLength(types) != 0)
+        {
+            varDataType *tmp = (varDataType *)vectorPop(types);
             free(tmp);
         }
     }
 }
 
-bool checkTypes(Vector *types1, Vector *types2){
-    if(types1 != NULL && types2 != NULL){
-        if(vectorLength(types1) == vectorLength(types2)){
-            for(unsigned int i = 0; i < vectorLength(types1); i++){
-                if(*(varDataType *)vectorGet(types1, i) != NONE && *(varDataType *)vectorGet(types2, i) != NONE)
+bool checkTypes(Vector *types1, Vector *types2)
+{
+    if (types1 != NULL && types2 != NULL)
+    {
+        if (vectorLength(types1) == vectorLength(types2))
+        {
+            for (unsigned int i = 0; i < vectorLength(types1); i++)
+            {
+                if (*(varDataType *)vectorGet(types1, i) != NONE && *(varDataType *)vectorGet(types2, i) != NONE)
                 {
-                    if(*(varDataType *)vectorGet(types1, i) != *(varDataType *)vectorGet(types2, i))
+                    if (*(varDataType *)vectorGet(types1, i) != *(varDataType *)vectorGet(types2, i))
                         return false;
                 }
             }
@@ -344,10 +358,12 @@ bool checkTypes(Vector *types1, Vector *types2){
     return false;
 }
 
-void defineFunc(htab_t* symTable, htab_key_t name, Vector *paramTypes, Vector *returnTypes){
-    if(symTable != NULL){
+void defineFunc(htab_t *symTable, htab_key_t name, Vector *paramTypes, Vector *returnTypes)
+{
+    if (symTable != NULL)
+    {
         htab_iterator_t tmp = htab_insert(symTable, name);
-        if(tmp.ptr == NULL)
+        if (tmp.ptr == NULL)
             throw_error_fatal(DEFINITION_ERROR, "%s", "Function is already definded");
         tmp.ptr->isConst = false;
         tmp.ptr->isVar = false;
@@ -356,11 +372,15 @@ void defineFunc(htab_t* symTable, htab_key_t name, Vector *paramTypes, Vector *r
     }
 }
 
-Vector* getFuncParamTypes(htab_t* symTable, htab_key_t name){
-    if(symTable != NULL){
-        if(isFuncDefined(symTable, name) == true){
+Vector *getFuncParamTypes(htab_t *symTable, htab_key_t name)
+{
+    if (symTable != NULL)
+    {
+        if (isFuncDefined(symTable, name) == true)
+        {
             htab_iterator_t tmp = htab_find(symTable, name);
-            if(tmp.ptr != NULL){
+            if (tmp.ptr != NULL)
+            {
                 return tmp.ptr->paramTypes;
             }
         }
@@ -368,11 +388,15 @@ Vector* getFuncParamTypes(htab_t* symTable, htab_key_t name){
     return NULL;
 }
 
-Vector* getFuncReturnTypes(htab_t* symTable, htab_key_t name){
-    if(symTable != NULL){
-        if(isFuncDefined(symTable, name) == true){
+Vector *getFuncReturnTypes(htab_t *symTable, htab_key_t name)
+{
+    if (symTable != NULL)
+    {
+        if (isFuncDefined(symTable, name) == true)
+        {
             htab_iterator_t tmp = htab_find(symTable, name);
-            if(tmp.ptr != NULL){
+            if (tmp.ptr != NULL)
+            {
                 return tmp.ptr->returnTypes;
             }
         }

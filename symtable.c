@@ -1,9 +1,7 @@
-// IFJ20
-// Autors:
-// Mario Harvan, xharva03
-// Juraj Marticek, xmarti97
-// Michal Slesar, xslesa01
-// Erik Belko, xbelko02
+/* IFJ20 - Hash table library (Tento modul bol prevzatý z predmetu IJC, projekt 2)
+ * Authors:
+ * Mario Harvan, xharva03
+ */
 
 #include "symtable.h"
 #include <stdio.h>
@@ -12,11 +10,8 @@
 #include "error.h"
 #include "semantic_analysis.h"
 
-//tento modul bol definovany v zadani, str. 20
-
-
 size_t htab_hash_fun(htab_key_t str){
-    uint32_t h=0;     // musí mít 32 bitů
+    uint32_t h=0;  
     const unsigned char *p;
     for(p=(const unsigned char*)str; *p!='\0'; p++)
         h = 65599*h + *p;
@@ -312,8 +307,6 @@ void htab_free(htab_t * t){
         throw_error(INTERNAL_ERROR, "%s", "Invalid pointer to table");
         return;
     }
-    //first call clear
     htab_clear(t);
-    //then free table
     free(t);
 }
