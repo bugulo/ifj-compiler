@@ -9,13 +9,14 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 
-#include "string.h"
-#include "error.h"
 #include "file.h"
+#include "error.h"
+#include "string.h"
 
+/** File to read from */
 dynamicArr *source = NULL;
 
 void scanner_set_file(dynamicArr *file) {
@@ -35,6 +36,7 @@ typedef enum {
     STATE_STRING
 } State;
 
+/** Compare string with available keywords */
 KeywordType get_keyword_type(String string) {
     if(string_compare(&string, "package")) return KEYWORD_PACKAGE;
     else if(string_compare(&string, "func")) return KEYWORD_FUNC;
@@ -48,12 +50,14 @@ KeywordType get_keyword_type(String string) {
     else return KEYWORD_NONE;
 }
 
+/** Convert string to 64bit integer */
 bool string_to_integer(String string, int64_t *number) {
     char *endptr;
 	*number = strtoll(string.ptr, &endptr, 10);
     return *endptr == '\0';
 }
 
+/** Convert string to double */
 bool string_to_double(String string, double *number) {
     char *endptr;
 	*number = strtod(string.ptr, &endptr);
@@ -69,6 +73,7 @@ void scanner_get_token(Token *token) {
         result = RESULT_ERROR;
 
     while(result == RESULT_NONE) {
+        /** Get next character */
         int c = arrGetc(source);
 
         if(state == STATE_START) {
@@ -186,6 +191,7 @@ void scanner_get_token(Token *token) {
                 if(!string_append_char(&string, c))
                     result = RESULT_ERROR;
             } else {
+                /** Check if string is keyword or identifier */
                 KeywordType keyword = get_keyword_type(string);
                 if(keyword != KEYWORD_NONE) {
                     token->type = TOKEN_KEYWORD;
@@ -221,18 +227,21 @@ void scanner_get_token(Token *token) {
             } else if(c == '.') {
                 char c1 = arrGetc(source);
 
+                /** Check trailing zeroes */
                 if((string.ptr[0] != '0' || string_compare(&string, "0")) && isdigit(c1) && string_append_char(&string, c)) {
                     state = STATE_DECIMAL;
                     arrUnGetc(source);
                 } else 
                     result = RESULT_ERROR;
             } else if(c == 'e' || c == 'E') {
+                /** Check trailing zeroes */
                 if((string.ptr[0] != '0' || string_compare(&string, "0")) && string_append_char(&string, c))
                     state = STATE_EXPONENT_SIGN;     
                 else 
                     result = RESULT_ERROR;
             } else {
                 int64_t number;
+                /** Check trailing zeroes */
                 if((string.ptr[0] != '0' || string_compare(&string, "0")) && string_to_integer(string, &number)) {
                     token->type = TOKEN_NUMBER_INT;
                     token->value.i = number;
@@ -326,6 +335,7 @@ void scanner_get_token(Token *token) {
                     char c2 = toupper(arrGetc(source));
                     char c3 = toupper(arrGetc(source));
 
+                    /** Convert hexadecimal character to decimal */
                     if((isdigit(c2) || (c2 >= 'A' && c2 <= 'F')) && (isdigit(c3) || (c3 >= 'A' && c3 <= 'F'))) {
                         char combined = (c2 >= 'A' ? c2 - 'A' + 10 : c2 - '0') * 16 + (c3 >= 'A' ? c3 - 'A' + 10 : c3 - '0');
 
@@ -347,14 +357,12 @@ void scanner_get_token(Token *token) {
                 if(!string_append_char(&string, c))
                     result = RESULT_ERROR;
             } else {
-                printf("%d", c);
                 result = RESULT_ERROR;
             }
         }
     }
 
-    if(!string_free(&string))
-        result = RESULT_ERROR;
+    string_free(&string);
 
     if(result != RESULT_OK)
         throw_error_fatal(LEXICAL_ERROR, "%s", "Lexical error");

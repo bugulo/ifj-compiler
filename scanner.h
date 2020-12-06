@@ -8,8 +8,8 @@
 
 #include <stdint.h>
 
-#include "string.h"
 #include "file.h"
+#include "string.h"
 
 typedef enum {
     RESULT_NONE,

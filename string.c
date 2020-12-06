@@ -8,12 +8,15 @@
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
+#include <stdio.h>
+
+#include "error.h"
 
 bool string_init(String *string) {
     string->ptr = malloc(STRING_BLOCK_SIZE);
 
     if(string->ptr == NULL)
-        return false; 
+        throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
 
     string->length = 0;
     string->size = STRING_BLOCK_SIZE;
@@ -56,7 +59,7 @@ bool string_append_string(String *string, const char *source) {
         if(string->ptr == NULL) {
             string->length = 0;
             string->size = 0;
-            return false;
+            throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
         }
 
         string->size = new_size;
@@ -81,7 +84,7 @@ bool string_append_char(String *string, char c) {
         if(string->ptr == NULL) {
             string->length = 0;
             string->size = 0;
-            return false;
+            throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
         }
 
         string->size = new_size;
