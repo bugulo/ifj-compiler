@@ -36,6 +36,12 @@ precedenceTableIndex getPrecedenceTableIndex(Token token);
 
 precedenceSigns precedenceTable(Token stackToken, Token inputToken);
 
+
+/**
+ * @brief Function will check if token is one of allowed token ending tokens for expression
+ * @param Token
+ * @return True if token is valid ending token, else false
+*/
 bool isEndToken(Token token);
 
 /**

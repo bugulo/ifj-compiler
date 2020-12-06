@@ -12,8 +12,6 @@
 #include "string.h"
 #include "code_gen.h"
 
-//operand1Symb = {.isVar = true, .var.name = operand1.value.s, .var.frame = LOCAL_FRAME};
-
 #define ASSIGN_DEST(destFrame, destName)    \
     dest.frame = destFrame;                 \
     dest.name = destName;
@@ -56,6 +54,7 @@ int reduceTokenCount(Stack *stack)
             stackPush(tmpStack, tmpToken);
     } while (tmpToken.type != TOKEN_DELIMITER && tmpToken.type != TOKEN_NONE);
 
+    //check if there is only Expression token in stack
     if (tmpToken.type == TOKEN_NONE)
     {
         if (stackPeek(tmpStack).type == TOKEN_EXPRESSION)
@@ -84,15 +83,17 @@ Token semanticCheckFor3Op(Token operand1, Token operation, Token operand2, Vecto
     TokenValue emptyVal;
     Token tmp;
     tmp.type = TOKEN_EXPRESSION;
+    //check if both operans are valid
     if (operand1.type == TOKEN_EXPRESSION && operand2.type == TOKEN_EXPRESSION)
     {
+        //semantic check for operands
         varDataType varType = checkOperationTypes(symtableVector, operand1, operand2);
         if (varType == NONE)
             throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible data types in expression");
 
         if(operation.type == TOKEN_DIV)
             checkZeroDivision(getSymTableForVar(symtableVector, operand2.value.s.ptr), operand2.value.s.ptr);
-
+        //special case for string, because only operation plus is supported    
         if (varType == STRING){
             switch(operation.type){
                 case TOKEN_MINUS:
@@ -104,6 +105,7 @@ Token semanticCheckFor3Op(Token operand1, Token operation, Token operand2, Vecto
                     break;
             }
         }
+        //special case for bool, because only some operations are supported
         if (varType == BOOL)
         {
             switch(operation.type){
@@ -120,10 +122,9 @@ Token semanticCheckFor3Op(Token operand1, Token operation, Token operand2, Vecto
         //prepare var for result
         String tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), varType, emptyVal, false);
         tmp.value.s = tmpVarName;
-        //code gen
+        //generate temporary var for result
         Var id = {.frame = TEMP_FRAME, .name = tmpVarName};
         DEFVAR(id, symtableVector);
-
         return tmp;
     }
     else
@@ -133,6 +134,7 @@ Token semanticCheckFor3Op(Token operand1, Token operation, Token operand2, Vecto
 
 void removeTokenAfterOp(Token token, Vector *symtableVector)
 {
+    //remove temporary variables from symtable
     if (token.type == TOKEN_EXPRESSION)
     {
         if (isVarUserDefined(getSymTableForVar(symtableVector, token.value.s.ptr), token.value.s.ptr) == false)
@@ -158,12 +160,9 @@ void reduceRules1Op(Stack *stack, Token operand1, Vector *symtableVector)
     switch (operand1.type)
     {
     case TOKEN_IDENTIFIER:;
-    #ifdef DEBUG
-        print("ID: %s", "E->i");
-    #endif
         //special case of _ var
         if(strcmp("_", operand1.value.s.ptr) == 0)
-            throw_error_fatal(SYNTAX_ERROR, "%s", "Can't use _ in expression");
+            throw_error_fatal(DEFINITION_ERROR, "%s", "Can't use _ in expression");
         //check if variable is defined
         htab_t *symTable = getSymTableForVar(symtableVector, operand1.value.s.ptr);
         if (symTable != NULL)
@@ -180,48 +179,36 @@ void reduceRules1Op(Stack *stack, Token operand1, Vector *symtableVector)
             throw_error_fatal(DEFINITION_ERROR, "%s", "Variable is not defined");
         break;
     case TOKEN_NUMBER_FLOAT:
-        #ifdef DEBUG
-            print("FLOAT: %s", "E->i");
-        #endif
+        //save constant into temporary variable
         tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), FLOAT, operand1.value, true);
         expressionToken.value.s = tmpVarName;
-        //call code generator
         var.frame = TEMP_FRAME;
         var.name = tmpVarName;
         value.token = operand1;
         value.isVar = false;
         define_var(var, value, symtableVector);
-
         stackPush(stack, expressionToken);
         break;
     case TOKEN_NUMBER_INT:
-        #ifdef DEBUG
-            print("INT: %s", "E->i");
-        #endif
+        //save constant into temporary variable
         tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), INTEGER, operand1.value, true);
         expressionToken.value.s = tmpVarName;
-        //call code generator
         var.frame = TEMP_FRAME;
         var.name = tmpVarName;
         value.token = operand1;
         value.isVar = false;
         define_var(var, value, symtableVector);
-
         stackPush(stack, expressionToken);
         break;
     case TOKEN_STRING:
-        #ifdef DEBUG
-            print("STRING: %s", "E->i");
-        #endif
+        //save constant into temporary variable
         tmpVarName = defineCompilerVar((htab_t *)vectorGet(symtableVector, vectorLength(symtableVector) - 1), STRING, operand1.value, true);
         expressionToken.value.s = tmpVarName;
-        //call code generator
         var.frame = TEMP_FRAME;
         var.name = tmpVarName;
         value.token = operand1;
         value.isVar = false;
         define_var(var, value, symtableVector);
-        
         stackPush(stack, expressionToken);
         break;
     default:
@@ -243,62 +230,43 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
     {
     case TOKEN_PLUS:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E+E");
-        #endif
-
-        //code generator
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
+        //code generation
         if(getVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr) == STRING)
             CONCAT(dest, operand1Symb, operand2Symb, symtableVector);
         else
             ADD(dest, operand1Symb, operand2Symb, false, symtableVector);
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         stackPush(stack, expressionToken);
         break;
     case TOKEN_MINUS:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E-E");
-        #endif
-
-        //code generator
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         SUB(dest, operand1Symb, operand2Symb, false, symtableVector);
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         stackPush(stack, expressionToken);
         break;
     case TOKEN_MUL:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E*E");
-        #endif
-
-        //code generator
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         MUL(dest, operand1Symb, operand2Symb, false, symtableVector);
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         stackPush(stack, expressionToken);
         break;
     case TOKEN_DIV:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E/E");
-        #endif
-
-        //code generator
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
@@ -307,35 +275,20 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
             DIV(dest, operand1Symb, operand2Symb, false, symtableVector);
         if(tmp == INTEGER)
             IDIV(dest, operand1Symb, operand2Symb, false, symtableVector);
-        
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         stackPush(stack, expressionToken);
         break;
     case TOKEN_EXPRESSION:
         if (operand1.type == TOKEN_BRACKET_LEFT && operand2.type == TOKEN_BRACKET_RIGHT)
-        {
-        #ifdef DEBUG
-            print("%s", "E->(E)");
-        #endif
-            //check if variable is defined
-            //todo
-            //code generator
             stackPush(stack, operation);
-        }
         else
-        {
             throw_error_fatal(SYNTAX_ERROR, "%s", "Syntax error in expression");
-        }
         break;
 
     case TOKEN_GREATER:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E>E");
-        #endif
-
-        //code generator
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
@@ -347,16 +300,11 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         break;
     case TOKEN_LESS:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E<E");
-        #endif
-
-        //code generator
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         LT(dest, operand1Symb, operand2Symb, false, symtableVector);
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -364,17 +312,13 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         break;
     case TOKEN_GREATER_EQ:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E>=E");
-        #endif
-
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         LT(dest, operand1Symb, operand2Symb, false, symtableVector);
         ASSIGN_OPERAND1SYMB(true, expressionToken.value.s, TEMP_FRAME);
         NOT(dest, operand1Symb, false, symtableVector);
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -383,17 +327,13 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 
     case TOKEN_LESS_EQ:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E<=E");
-        #endif
-
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         GT(dest, operand1Symb, operand2Symb, false, symtableVector);
         ASSIGN_OPERAND1SYMB(true, expressionToken.value.s, TEMP_FRAME);
         NOT(dest, operand1Symb, false, symtableVector);
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -401,16 +341,11 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         break;
     case TOKEN_EQUALS:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E==E");
-        #endif
-
-        //code generator
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         EQ(dest, operand1Symb, operand2Symb, false, symtableVector);
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -418,17 +353,13 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
         break;
     case TOKEN_NOT_EQUALS:
         expressionToken = semanticCheckFor3Op(operand1, operation, operand2, symtableVector);
-        #ifdef DEBUG
-            print("%s", "E->E!=E");
-        #endif
-
+        //code generation
         ASSIGN_DEST(TEMP_FRAME, expressionToken.value.s);
         ASSIGN_OPERAND1SYMB(true, operand1.value.s, LOCAL_FRAME);
         ASSIGN_OPERAND2SYMB(true, operand2.value.s, LOCAL_FRAME);
         EQ(dest, operand1Symb, operand2Symb, false, symtableVector);
         ASSIGN_OPERAND1SYMB(true, expressionToken.value.s, TEMP_FRAME);
         NOT(dest, operand1Symb, false, symtableVector);
-
         removeTokenAfterOp(operand1, symtableVector);
         removeTokenAfterOp(operand2, symtableVector);
         setVarType(getSymTableForVar(symtableVector, expressionToken.value.s.ptr), expressionToken.value.s.ptr, BOOL);
@@ -443,11 +374,9 @@ void reduceRules3Op(Stack *stack, Token operand1, Token operation, Token operand
 void reduceByRule(Stack *stack, Vector *symtableVector)
 {
     int reduceCount = reduceTokenCount(stack);
-
     Token operand1;
     Token operand2;
     Token operation;
-
     switch (reduceCount)
     {
     case 1:
@@ -475,7 +404,6 @@ void reduceByRule(Stack *stack, Vector *symtableVector)
 
 expResult expression(Vector *symtableVector, htab_t *funcTable)
 {
-    //CREATEFRAME();
     Stack *stack = stackInit();
 
     Token inputToken;
@@ -496,7 +424,7 @@ expResult expression(Vector *symtableVector, htab_t *funcTable)
     stackPush(stack, inputToken);
     scanner_get_token(&inputToken);
 
-    //check for func
+    //check for funcion
     if (inputToken.type == TOKEN_IDENTIFIER)
     {
         //special case of underscore
@@ -525,12 +453,6 @@ expResult expression(Vector *symtableVector, htab_t *funcTable)
     }
     while (stackPeek(stack).type != TOKEN_NONE || inputToken.type != TOKEN_NONE)
     {
-        //check if var is defined
-        /*if(inputToken.type == TOKEN_IDENTIFIER)
-        {
-            if (isVarDefined(getSymTableForVar(symtableVector, inputToken.value.s.ptr), inputToken.value.s.ptr) == false)
-                throw_error_fatal(DEFINITION_ERROR, "%s", "Variable is not defined");
-        }*/
         //detect end of expression
         if (isEndToken(inputToken) == true)
         {
