@@ -118,10 +118,12 @@ void STRI2INT(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec);
 void PRINT(Symb symb, Vector *varScopeVec);
 
 /*_______________FUNCTION_OPERATIONS________________*/
+
 void declare_function(char *name, Vector *params, Vector *varScopeVec);
 
 void call_function(char *name, Vector *call_params, Vector *return_params, Vector *varScopeVec);
 
+// Called after function declaration and body
 void return_function(Vector *return_params, Vector *varScopeVec);
 
 void print_i(const char *fmt, ...);
@@ -158,8 +160,10 @@ void if_end();
 // Inital for part, remeber to have all needed variables in a frame
 void for_start();
 
+// This part checks expression resulted from expression.h every cycle
 void for_expression(Var res, Vector *varScopeVec);
 
+// This part is for jumping to assigment every cycle
 void for_assign_start();
 
 // Body of a for cycle, `res` is result of a test expression
@@ -171,9 +175,10 @@ void for_end();
 // Call this at the end of the main
 void main_end();
 
-// This should be the last function called 
+// This should be the last function called
 void program_end();
 
+// Define new variable, and assign it value from symbol
 void define_var(Var var, Symb value, Vector *varScopeVec);
 
 #endif

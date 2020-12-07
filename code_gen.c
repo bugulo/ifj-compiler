@@ -12,17 +12,21 @@
 #include "semantic_analysis.h"
 #include <inttypes.h>
 
-
 #define FRAME_TAG_LEN 3
 
+// This functions converts variables to string notation, so we can print them
 char *variableToString(Var variable, Vector *varScopeVec)
 {
+    // Get current scope id
     int scopeId = getSymtableIdForVar(varScopeVec, variable.name.ptr);
+    // Differentiate same variable names across same scopeIds (after leaving and entering another scope)
     unsigned varCnt = getVarCnt(getSymTableForVar(varScopeVec, variable.name.ptr), variable.name.ptr);
+    // Gets length of new variable so we can allocate it
     int varLength = snprintf(NULL, 0, "$%d$%d$%s", varCnt, scopeId, variable.name.ptr);
     if (isVarUserDefined(getSymTableForVar(varScopeVec, variable.name.ptr), variable.name.ptr) == false)
         variable.frame = TEMP_FRAME;
 
+    // Adding FRAME_TAG_LEN so we can ad TF@ | LF@ | GF@ prefix
     char *nameString = malloc(sizeof(char) * varLength + sizeof(char) * FRAME_TAG_LEN + 1);
     if (nameString == NULL)
         throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
@@ -41,6 +45,7 @@ char *variableToString(Var variable, Vector *varScopeVec)
     return nameString;
 }
 
+// This functions converts symbols to string notation, so we can print them
 char *symbolToString(Symb symbol, Vector *varScopeVec)
 {
     if (symbol.isVar)
@@ -51,6 +56,7 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
     {
         // String escaping
         int stringLength = strlen(symbol.token.value.s.ptr);
+        // Calloc also nulls allocated space
         char *newEscapedString = calloc(stringLength * 4 + 1, sizeof(char));
         if (newEscapedString == NULL)
             throw_error_fatal(INTERNAL_ERROR, "%s", "Memory allocation error");
@@ -58,11 +64,13 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
         for (int i = 0, j = 0; i < stringLength; i++)
         {
             int c = symbol.token.value.s.ptr[i];
+            // Escape chosen characters larger than (inclusive) 10
             if ((c >= 10 && c <= 32) || c == 35 || c == 92)
             {
                 int printLen = snprintf(newEscapedString + j, 5, "\\0%d", c);
                 j += printLen;
             }
+            // Escape chosen characters smaller than 10
             else if (c >= 0 && c < 10)
             {
                 int printLen = snprintf(newEscapedString + j, 5, "\\00%d", c);
@@ -83,6 +91,7 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
 
     if (symbol.token.type == TOKEN_NUMBER_INT)
     {
+        // Support for 64 bit int
         char *formatString = "int@%" PRId64 "";
         int length = snprintf(NULL, 0, formatString, symbol.token.value.i);
         finalString = malloc(sizeof(char) * length + 1);
@@ -93,6 +102,7 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
 
     if (symbol.token.type == TOKEN_NUMBER_FLOAT)
     {
+        // Support for 64 bit hex float
         char *formatString = "float@%la";
         int length = snprintf(NULL, 0, formatString, symbol.token.value.d);
         finalString = malloc(sizeof(char) * length + 1);
@@ -103,6 +113,8 @@ char *symbolToString(Symb symbol, Vector *varScopeVec)
 
     return finalString;
 }
+
+/* Simple printing of various instructions */
 
 void MOVE(Var dest, Symb src, Vector *varScopeVec)
 {
@@ -378,7 +390,9 @@ void INT2CHAR(Var dest, Symb op, bool useStack, Vector *varScopeVec)
 
 void PRINT(Symb symb, Vector *varScopeVec)
 {
-    print_i("WRITE %s", symbolToString(symb, varScopeVec));
+    char *printString = symbolToString(symb, varScopeVec);
+    print_i("WRITE %s", printString);
+    free(printString);
 }
 
 void STRI2INT(Var dest, Symb op1, Symb op2, bool useStack, Vector *varScopeVec)
@@ -404,12 +418,14 @@ void declare_function(char *name, Vector *params, Vector *varScopeVec)
     print("Declaring function %s, with %d params", name, vectorLength(params));
 #endif
     print_i("LABEL %s", name);
+    // Prepares LF and TF frames
     print_i("CREATEFRAME");
     print_i("PUSHFRAME");
     print_i("CREATEFRAME");
     char *paramString;
     Var tmpVar;
     tmpVar.frame = LOCAL_FRAME;
+    // Function parameters pop
     for (unsigned i = 0; i < vectorLength(params); i++)
     {
         tmpVar.name.ptr = vectorGet(params, i);
@@ -427,6 +443,7 @@ void declare_function(char *name, Vector *params, Vector *varScopeVec)
     }
 }
 
+// Declare and initialize nil variable
 char *createNilVar()
 {
     char *formatString = "nilVar%d";
@@ -447,6 +464,7 @@ void call_function(char *name, Vector *call_params, Vector *return_params, Vecto
     char *paramString;
     Var tmpVar;
     tmpVar.frame = LOCAL_FRAME;
+    // Function parameters push
     for (unsigned i = 0; i < vectorLength(call_params); i++)
     {
         tmpVar.name.ptr = vectorGet(call_params, i);
@@ -454,8 +472,10 @@ void call_function(char *name, Vector *call_params, Vector *return_params, Vecto
         print_i("PUSHS %s", paramString);
         free(paramString);
     }
+    // Save current frame
     print_i("PUSHFRAME");
     print_i("CALL %s", name);
+    // Pop return values
     for (unsigned i = 0; i < vectorLength(return_params); i++)
     {
         tmpVar.name.ptr = vectorGet(return_params, i);
@@ -481,6 +501,7 @@ void return_function(Vector *return_params, Vector *varScopeVec)
     char *paramString;
     Var tmpVar;
     tmpVar.frame = LOCAL_FRAME;
+    // Push return values
     for (unsigned i = 1; i <= vectorLength(return_params); i++)
     {
         tmpVar.name.ptr = vectorGet(return_params, vectorLength(return_params) - i);
@@ -493,7 +514,7 @@ void return_function(Vector *return_params, Vector *varScopeVec)
     print_i("RETURN");
 }
 
-// This fn PUSHes error label to the stack if TF@res == true
+// This fn PUSHes error label (int@1) to the stack if TF@res == true
 void declare_error_setter()
 {
     print_i("LABEL $error_push");
@@ -512,11 +533,13 @@ void declare_inputs()
     print_i("CREATEFRAME");
     char *inputStringVarName = "TF@inputString";
     print_i("DEFVAR %s", inputStringVarName);
+    // Read string, then check type (if error occured)
     print_i("READ %s string", inputStringVarName);
     char *typeName = "TF@type";
     print_i("DEFVAR %s", typeName);
     print_i("TYPE %s %s", typeName, inputStringVarName);
     print_i("DEFVAR TF@res");
+    // Handle error
     print_i("EQ TF@res %s string@nil", typeName);
     print_i("CALL $error_push");
     print_i("JUMPIFEQ $inputs_set_empty TF@res bool@true");
@@ -771,12 +794,15 @@ Vector *for_string_stack;
 
 void gen_init()
 {
-    //sglobalne spremenne
+    // Global variables
     if_count_stack = vectorInit();
     for_count_stack = vectorInit();
     for_string_stack = vectorInit();
+    // IFJcode20 preamble
     print_i(".IFJcode20");
+    // Goto main
     print_i("JUMP main");
+    // Declare inbuilt functions
     declare_error_setter();
     declare_inputs();
     declare_inputi();
@@ -787,6 +813,7 @@ void gen_init()
     declare_substr();
     declare_ord();
     declare_chr();
+    // Error handling (div by 0)
     print_i("LABEL $err_div_by_zero");
     print_i("EXIT int@9");
 }
@@ -912,7 +939,11 @@ void define_var(Var var, Symb value, Vector *varScopeVec)
     //print("Creating variable `%s`, and assigning value `%s`", variableToString(var), symbolToString(value));
 #endif
     DEFVAR(var, varScopeVec);
-    print_i("MOVE %s %s", variableToString(var, varScopeVec), symbolToString(value, varScopeVec));
+    char *varString = variableToString(var, varScopeVec);
+    char *symString = symbolToString(value, varScopeVec);
+    print_i("MOVE %s %s", varString, symString);
+    free(varString);
+    free(symString);
 }
 
 void main_end()
@@ -923,8 +954,12 @@ void main_end()
 void program_end()
 {
     print_i("LABEL $program_end");
+    vectorFree(if_count_stack);
+    vectorFree(for_count_stack);
+    vectorFree(for_string_stack);
 }
 
+// Helper function for instruction printing
 void print_i(const char *fmt, ...)
 {
     va_list args;

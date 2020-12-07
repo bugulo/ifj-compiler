@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "error.h"
 
+// Function for converting enum (ErrorTypes) to string
 char *errTypeToString(ErrorTypes err_no)
 {
   switch (err_no)
