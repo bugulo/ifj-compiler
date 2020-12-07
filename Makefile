@@ -72,4 +72,4 @@ clean:
 #PACK
 
 pack: compiler
-	zip xharva03.zip *.c *.h Makefile
+	zip xharva03.zip *.c *.h Makefile rozdeleni.txt
