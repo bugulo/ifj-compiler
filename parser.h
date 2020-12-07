@@ -51,7 +51,7 @@ void ruleProgram(ParserData *data);
  * 
  * After prolog
  * 
- * 2: <body> -> func_n>
+ * 2: <body> -> <func_n>
  * 
  * @param data ParserData instance
  */
@@ -168,9 +168,9 @@ void ruleStList(ParserData *data);
  * Command in function body
  * 
  * 19: <stat> -> id <stat_body>
- * 30: <stat> -> if <expression> { <st_list> } else { <st_list> }
- * 31: <stat> -> for <for_def> ; <expression> ; <for_assign> { <st_list> }
- * 36: <stat> -> return <return_exp>
+ * 35: <stat> -> if <expression> { <st_list> } else { <st_list> }
+ * 36: <stat> -> for <for_def> ; <expression> ; <for_assign> { <st_list> }
+ * 41: <stat> -> return <return_exp>
  * 
  * @param data ParserData instance
  */
@@ -193,8 +193,8 @@ void ruleStatBody(ParserData *data, Token id);
  * 
  * Optional identifier
  * 
- * 26: <id_n> -> , id <id_n>
- * 27: <id_n> -> eps
+ * 31: <id_n> -> , id <id_n>
+ * 32: <id_n> -> eps
  * 
  * @param data ParserData instance
  * @param data Vector of identifier names
@@ -206,8 +206,8 @@ void ruleIdN(ParserData *data, Vector *names);
  * 
  * Optional expression
  * 
- * 28: <expression_n> -> , <expression> <expression_n>
- * 29: <expression_n> -> eps
+ * 33: <expression_n> -> , <expression> <expression_n>
+ * 34: <expression_n> -> eps
  * 
  * @param data ParserData instance
  * @param names Vector of expression names
@@ -220,8 +220,8 @@ void ruleExpN(ParserData *data, Vector *names, Vector *types);
  * 
  * Function return expressions
  * 
- * 37: <return_exp> -> <expression> <expression_n>
- * 38: <return_exp> -> eps
+ * 42: <return_exp> -> <expression> <expression_n>
+ * 43: <return_exp> -> eps
  * 
  * @param data ParserData instance
  */
@@ -246,8 +246,8 @@ void ruleCallParams(ParserData *data, Vector *names, Vector *types);
  * 
  * Optional parameter in function call
  * 
- * <call_params_n> -> , <values> <call_params_n>
- * <call_params_n> -> eps
+ * 25: <call_params_n> -> , <values> <call_params_n>
+ * 26: <call_params_n> -> eps
  * 
  * @param data ParserData instance
  * @param names Vector of param names
@@ -260,10 +260,10 @@ void ruleCallParamsN(ParserData *data, Vector *names, Vector *types);
  * 
  * Value of function call parameter
  * 
- * <values> -> value_int
- * <values> -> value_float
- * <values> -> value_string
- * <values> -> id
+ * 27: <values> -> value_int
+ * 28: <values> -> value_float64
+ * 29: <values> -> value_string
+ * 30: <values> -> id
  * 
  * @param data ParserData instance
  * @param names Vector of param names
@@ -276,8 +276,8 @@ bool ruleValues(ParserData *data, Vector *names, Vector *types);
  * 
  * Definition part of for
  * 
- * <for_def> -> id := <expression>
- * <for_def> -> eps
+ * 37: <for_def> -> id := <expression>
+ * 38: <for_def> -> eps
  * 
  * @param data ParserData instance
  */
@@ -288,8 +288,8 @@ void ruleForDef(ParserData *data);
  * 
  * Assign part of for
  * 
- * <for_assign> -> id <id_n> = <expression> <expression_n>
- * <for_assign> -> eps
+ * 39: <for_assign> -> id <id_n> = <expression> <expression_n>
+ * 40: <for_assign> -> eps
  * 
  * @param data ParserData instance
  */
@@ -300,7 +300,7 @@ void ruleForAssign(ParserData *data);
  * 
  * Expression
  * 
- * 39: <expression> -> expression
+ * 44: <expression> -> expression
  * 
  * @param data ParserData instance
  * @param allowEmpty Are empty expressions allowed

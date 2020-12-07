@@ -916,7 +916,7 @@ void parse() {
     data.isFirstScan = true;
     data.scopes = vectorInit();
     data.strings = vectorInit();
-    data.table = htab_init(10);
+    data.table = htab_init(1000);
     data.stack = stackInit();
     register_functions(&data);
 
