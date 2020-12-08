@@ -168,8 +168,8 @@ void ruleStList(ParserData *data);
  * Command in function body
  * 
  * 19: <stat> -> id <stat_body>
- * 35: <stat> -> if <expression> { <st_list> } else { <st_list> }
- * 36: <stat> -> for <for_def> ; <expression> ; <for_assign> { <st_list> }
+ * 35: <stat> -> if <expression> { EOL <st_list> } else { EOL <st_list> }
+ * 36: <stat> -> for <for_def> ; <expression> ; <for_assign> { EOL <st_list> }
  * 41: <stat> -> return <return_exp>
  * 
  * @param data ParserData instance

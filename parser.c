@@ -61,7 +61,7 @@ bool load_and_compare(ParserData *data, TokenType type, bool push) {
 }
 
 /**
- * Skip all consecutive eols
+ * Skip all consecutive eol tokens
  * 
  * @param data ParserData instance
  */
@@ -100,13 +100,6 @@ void free_parser(ParserData *data) {
     arrFree(data->file);
 }
 
-/** Wrap throw_error_fatal so it cleans up ParserData before exit */
-#define throw_error_parser(data, err_no, fmt, ...) \
-    do { \
-        free_parser(data); \
-        throw_error_fatal(err_no, fmt, ##__VA_ARGS__); \
-    } while(0)
-
 /**
  * Parse function body in first scan
  * 
@@ -131,36 +124,36 @@ bool wait_for_scope_end(ParserData *data, bool first) {
 void ruleProgram(ParserData *data) {
     optional_eol(data);
     if(!load_and_compare(data, TOKEN_KEYWORD, false) || data->token.value.k != KEYWORD_PACKAGE)
-        throw_error_parser(data, SYNTAX_ERROR, "%s", "Missing prolog");
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Missing prolog");
 
     if(!load_and_compare(data, TOKEN_IDENTIFIER, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
     if(!string_compare(&data->token.value.s, "main"))
-        throw_error_parser(data, SYNTAX_ERROR, "%s", "Wrong package name");
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Wrong package name");
 
     if(!load_and_compare(data, TOKEN_EOL, false)) /** Required EOL after prolog */
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
 
     optional_eol(data);
     ruleBody(data);
     optional_eol(data);
     
     if(!load_and_compare(data, TOKEN_EOF, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOF, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOF, got token type %d", data->token.type);
 
     if(data->isFirstScan) {
         /** We should check if main exists in first scan */
         if(!isFuncDefined(data->table, "main"))
-            throw_error_parser(data, DEFINITION_ERROR, "%s", "Missing function main");
+            throw_error_fatal(DEFINITION_ERROR, "%s", "Missing function main");
         else {
             Vector *empty = vectorInit();
             Vector *params = getFuncParamTypes(data->table, "main");
             Vector *returns = getFuncReturnTypes(data->table, "main");
 
             if(!checkTypes(params, empty))
-                throw_error_parser(data, FUNCTION_DEFINITION_ERROR, "%s", "Invalid number of arguments for main function");
+                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Invalid number of arguments for main function");
             if(!checkTypes(returns, empty))
-                throw_error_parser(data, FUNCTION_DEFINITION_ERROR, "%s", "Invalid number of return parameters for main function");
+                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Invalid number of return parameters for main function");
         }
     }
 }
@@ -175,7 +168,7 @@ void ruleFuncN(ParserData *data) {
         return;
 
     if(data->token.value.k != KEYWORD_FUNC)
-        throw_error_parser(data, SYNTAX_ERROR, "Expected KEYWORD_FUNC, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected KEYWORD_FUNC, got token type %d", data->token.type);
 
     push_token(data, data->token);
     ruleFunc(data);
@@ -184,10 +177,10 @@ void ruleFuncN(ParserData *data) {
 
 void ruleFunc(ParserData *data) {
     if(!load_and_compare(data, TOKEN_KEYWORD, false) || data->token.value.k != KEYWORD_FUNC)
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_KEYWORD - FUNC, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_KEYWORD - FUNC, got token type %d", data->token.type);
 
     if(!load_and_compare(data, TOKEN_IDENTIFIER, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
 
     /** Create new scope */
     insertLocalSymTable(data->scopes);
@@ -199,10 +192,10 @@ void ruleFunc(ParserData *data) {
     Vector *returns = vectorInit();
 
     if(!load_and_compare(data, TOKEN_BRACKET_LEFT, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACKET_LEFT, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_LEFT, got token type %d", data->token.type);
     ruleParams(data, params, names);
     if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
 
     ruleRetTypes(data, returns);
 
@@ -213,10 +206,10 @@ void ruleFunc(ParserData *data) {
         declare_function(func_name.ptr, names, data->scopes);
 
     if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
 
     if(!load_and_compare(data, TOKEN_EOL, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
 
     data->inFunction = true;
     data->returned = false;
@@ -224,8 +217,9 @@ void ruleFunc(ParserData *data) {
 
     /** In first scan we do not care about function body, so we only parse function declarations */
     if(data->isFirstScan) {
+        /** We do not need to use rule table here as we only need to find the end of the function body */
         if(!wait_for_scope_end(data, true))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
     } else {
         ruleStList(data);
 
@@ -237,7 +231,7 @@ void ruleFunc(ParserData *data) {
             else
                 return_function(vectorInit(), data->scopes);
         } else if(!data->returned)
-            throw_error_parser(data, FUNCTION_DEFINITION_ERROR, "Missing return in function %s", data->function.ptr);
+            throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Missing return in function %s", data->function.ptr);
     }
 
     /** Remove current scope */
@@ -246,7 +240,7 @@ void ruleFunc(ParserData *data) {
     data->inFunction = false;
 
     if(!load_and_compare(data, TOKEN_BRACE_RIGHT, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
 
     /** If this is the last function, there does not need to be EOL */
     if(load_and_compare(data, TOKEN_EOF, true)) {
@@ -256,14 +250,14 @@ void ruleFunc(ParserData *data) {
 
     /** There is something after this function, so expect EOL */
     if(!load_and_compare(data, TOKEN_EOL, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
 }
 
 void ruleParams(ParserData *data, Vector *params, Vector *names) {
     if(!load_and_compare(data, TOKEN_IDENTIFIER, true)) 
         return;
     if(string_compare(&data->token.value.s, "_")) 
-        throw_error_parser(data, OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
+        throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
 
     String name = data->token.value.s;
     varDataType type = ruleType(data, params);
@@ -282,9 +276,9 @@ void ruleParamsN(ParserData *data, Vector *params, Vector *names) {
     if(!load_and_compare(data, TOKEN_COMA, true)) 
         return;
     if(!load_and_compare(data, TOKEN_IDENTIFIER, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
     if(string_compare(&data->token.value.s, "_")) 
-        throw_error_parser(data, OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
+        throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
 
     String name = data->token.value.s;
     varDataType type = ruleType(data, params);
@@ -301,7 +295,7 @@ void ruleParamsN(ParserData *data, Vector *params, Vector *names) {
 
 varDataType ruleType(ParserData *data, Vector *types) {
     if(!load_and_compare(data, TOKEN_KEYWORD, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_KEYWORD, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_KEYWORD, got token type %d", data->token.type);
 
     if ((data->token.value.k == KEYWORD_INT) || (data->token.value.k == KEYWORD_FLOAT64) || (data->token.value.k == KEYWORD_STRING)) {
         varDataType type;
@@ -313,7 +307,7 @@ varDataType ruleType(ParserData *data, Vector *types) {
         addFuncType(types, type);
         return type;
     } else {
-        throw_error_parser(data, SYNTAX_ERROR, "Expected KEYWORD_INT|KEYWORD_FLOAT64|KEYWORD_STRING, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected KEYWORD_INT|KEYWORD_FLOAT64|KEYWORD_STRING, got token type %d", data->token.type);
     }
 }
 
@@ -327,7 +321,7 @@ void ruleRetTypes(ParserData *data, Vector *returns) {
     ruleRetTypesN(data, returns);
 
     if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
 }
 
 void ruleRetTypesN(ParserData *data, Vector *returns) {
@@ -342,7 +336,7 @@ void ruleStList(ParserData *data) {
     optional_eol(data);
     if(ruleStat(data)) {
         if(!load_and_compare(data, TOKEN_EOL, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
         ruleStList(data);
     }
 }
@@ -358,14 +352,14 @@ bool ruleStat(ParserData *data) {
         
         /** There needs to be bool expression in the condition */
         if(getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr) != BOOL)
-            throw_error_parser(data, INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible expression error");
+            throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible expression error");
 
         if_start(result.result.ptr, data->scopes);
 
         if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
         if(!load_and_compare(data, TOKEN_EOL, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
         optional_eol(data);
         /** Create new scope for if body */
         insertLocalSymTable(data->scopes);
@@ -373,15 +367,15 @@ bool ruleStat(ParserData *data) {
         /** Remove if body scope */
         removeLocalSymTable(data->scopes);
         if(!load_and_compare(data, TOKEN_BRACE_RIGHT, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
 
         if(!load_and_compare(data, TOKEN_KEYWORD, false) || data->token.value.k != KEYWORD_ELSE)
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_KEYWORD - ELSE, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_KEYWORD - ELSE, got token type %d", data->token.type);
 
         if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
         if(!load_and_compare(data, TOKEN_EOL, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
 
         if_core();
 
@@ -392,7 +386,7 @@ bool ruleStat(ParserData *data) {
         /** Remove else body scope */
         removeLocalSymTable(data->scopes);
         if(!load_and_compare(data, TOKEN_BRACE_RIGHT, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
 
         if_end();
         return true;
@@ -401,16 +395,16 @@ bool ruleStat(ParserData *data) {
         insertLocalSymTable(data->scopes);
         ruleForDef(data);
         if(!load_and_compare(data, TOKEN_SEMICOLON, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
 
         for_start();
 
         expResult result = ruleExp(data, false, false);
         /** There needs to be bool expression in the condition */ 
         if(getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr) != BOOL)
-            throw_error_parser(data, INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible expression error");
+            throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Incompatible expression error");
         if(!load_and_compare(data, TOKEN_SEMICOLON, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_SEMICOLON, got token type %d", data->token.type);
 
         Var exp_result = {.name = result.result, .frame = TEMP_FRAME};
         for_expression(exp_result, data->scopes);
@@ -419,9 +413,9 @@ bool ruleStat(ParserData *data) {
         for_body();
 
         if(!load_and_compare(data, TOKEN_BRACE_LEFT, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_LEFT, got token type %d", data->token.type);
         if(!load_and_compare(data, TOKEN_EOL, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
         optional_eol(data);
         /** Create new scope for the body of for */
         insertLocalSymTable(data->scopes);
@@ -432,7 +426,7 @@ bool ruleStat(ParserData *data) {
         removeLocalSymTable(data->scopes);
 
         if(!load_and_compare(data, TOKEN_BRACE_RIGHT, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACE_RIGHT, got token type %d", data->token.type);
 
         for_end();
         return true;
@@ -451,16 +445,16 @@ void ruleStatBody(ParserData *data, Token id) {
     htab_t *scope = getLocalSymTable(data->scopes);
     if(data->token.type == TOKEN_DECLARATION) {
         if(string_compare(&id.value.s, "_")) 
-            throw_error_parser(data, OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
+            throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
 
         if(isVarUserDefined(scope, id.value.s.ptr))
-            throw_error_parser(data, DEFINITION_ERROR, "Variable %s already defined", id.value.s.ptr);
+            throw_error_fatal(DEFINITION_ERROR, "Variable %s already defined", id.value.s.ptr);
 
         expResult result = ruleExp(data, false, false);
         htab_t *exp_scope = getSymTableForVar(data->scopes, result.result.ptr);
 
         if(getVarType(exp_scope, result.result.ptr) == BOOL)
-            throw_error_parser(data, TYPE_DEFINITION_ERROR, "%s", "Bool variable declaration not supported");
+            throw_error_fatal(TYPE_DEFINITION_ERROR, "%s", "Bool variable declaration not supported");
 
         TokenValue value;
         if(isVarConst(exp_scope, result.result.ptr))
@@ -483,16 +477,16 @@ void ruleStatBody(ParserData *data, Token id) {
         ruleCallParams(data, names, types);
 
         if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
 
         if(!isFuncDefined(data->table, id.value.s.ptr))
-            throw_error_parser(data, DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
+            throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
 
         if(getSymTableForVar(data->scopes, id.value.s.ptr) != NULL)
-            throw_error_parser(data, OTHER_SEMANTIC_ERROR, "Function %s is shadowed by variable", id.value.s.ptr);
+            throw_error_fatal(OTHER_SEMANTIC_ERROR, "Function %s is shadowed by variable", id.value.s.ptr);
 
         if(getFuncReturnTypes(data->table, id.value.s.ptr)->length != 0)
-            throw_error_parser(data, FUNCTION_DEFINITION_ERROR, "Function %s cannot be called as a void function", id.value.s.ptr);
+            throw_error_fatal(FUNCTION_DEFINITION_ERROR, "Function %s cannot be called as a void function", id.value.s.ptr);
 
         /** We do not support variadic functions, so print is handled differently */
         if(string_compare(&id.value.s, "print")) {
@@ -503,7 +497,7 @@ void ruleStatBody(ParserData *data, Token id) {
             }
         } else {
             if(!checkTypes(getFuncParamTypes(data->table, id.value.s.ptr), types))
-                throw_error_parser(data, FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
+                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
 
             call_function(id.value.s.ptr, names, vectorInit(), data->scopes);
         }
@@ -518,7 +512,7 @@ void ruleStatBody(ParserData *data, Token id) {
         ruleIdN(data, lnames);
 
         if(!load_and_compare(data, TOKEN_ASSIGNMENT, false))
-            throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_ASSIGNMENT, got token type %d", data->token.type);
+            throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_ASSIGNMENT, got token type %d", data->token.type);
 
         /** Get types of loaded variables */
         for(unsigned i = 0; i < lnames->length; i++) {
@@ -528,7 +522,7 @@ void ruleStatBody(ParserData *data, Token id) {
             } else {
                 htab_t *scope = getSymTableForVar(data->scopes, name);
                 if(scope == NULL)
-                    throw_error_parser(data, DEFINITION_ERROR, "Variable %s not defined", name);
+                    throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", name);
 
                 addFuncType(ltypes, getVarType(scope, name));
             }
@@ -539,12 +533,12 @@ void ruleStatBody(ParserData *data, Token id) {
         /** There is function on the right side */
         if(result.isFunc) {
             if(!load_and_compare(data, TOKEN_IDENTIFIER, false))
-                throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
+                throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
 
             String function = data->token.value.s;
 
             if(!load_and_compare(data, TOKEN_BRACKET_LEFT, false))
-                throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACKET_LEFT, got token type %d", data->token.type);
+                throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_LEFT, got token type %d", data->token.type);
 
             optional_eol(data);
 
@@ -554,21 +548,21 @@ void ruleStatBody(ParserData *data, Token id) {
             ruleCallParams(data, names, types);
 
             if(!load_and_compare(data, TOKEN_BRACKET_RIGHT, false))
-                throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
+                throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_BRACKET_RIGHT, got token type %d", data->token.type);
 
             if(!load_and_compare(data, TOKEN_EOL, true))
-                throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
+                throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_EOL, got token type %d", data->token.type);
 
             push_token(data, data->token);
 
             if(!isFuncDefined(data->table, function.ptr))
-                throw_error_parser(data, DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
+                throw_error_fatal(DEFINITION_ERROR, "Function %s not defined", id.value.s.ptr);
             if(getSymTableForVar(data->scopes, function.ptr) != NULL)
-                throw_error_parser(data, OTHER_SEMANTIC_ERROR, "Function %s is shadowed by variable", id.value.s.ptr);
+                throw_error_fatal(OTHER_SEMANTIC_ERROR, "Function %s is shadowed by variable", id.value.s.ptr);
             if(!checkTypes(getFuncParamTypes(data->table, function.ptr), types))
-                throw_error_parser(data, FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
+                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call");
             if(!checkTypes(getFuncReturnTypes(data->table, function.ptr), ltypes))
-                throw_error_parser(data, FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call return");
+                throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Incorrect data types in function call return");
 
             /** We do not know what function returns, so we need to set variables on the left side as non-constant */
             for(unsigned i = 0; i < lnames->length; i++) {
@@ -591,7 +585,7 @@ void ruleStatBody(ParserData *data, Token id) {
             ruleExpN(data, rnames, rtypes);
 
             if(!checkTypes(ltypes, rtypes))
-                throw_error_parser(data, OTHER_SEMANTIC_ERROR, "%s", "Type mismatch");
+                throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Type mismatch");
 
             for(unsigned i = 0; i < lnames->length; i++) {
                 char *target_name = (char *) vectorGet(lnames, i);
@@ -621,7 +615,7 @@ void ruleIdN(ParserData *data, Vector *names) {
     if(!load_and_compare(data, TOKEN_COMA, true))
         return;
     if(!load_and_compare(data, TOKEN_IDENTIFIER, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_IDENTIFIER, got token type %d", data->token.type);
 
     vectorPush(names, (void *) data->token.value.s.ptr);
 
@@ -650,13 +644,13 @@ void ruleReturnExp(ParserData *data) {
         addFuncType(types, getVarType(getSymTableForVar(data->scopes, result.result.ptr), result.result.ptr));
     } else if(load_and_compare(data, TOKEN_COMA, true)) {
         /** First expression can be empty only when it is return of void function */
-        throw_error_parser(data, SYNTAX_ERROR, "%s", "Expected non-empty expression, got empty");
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Expected non-empty expression, got empty");
     }
 
     ruleExpN(data, names, types);
 
     if(!checkTypes(getFuncReturnTypes(data->table, data->function.ptr), types))
-        throw_error_parser(data, FUNCTION_DEFINITION_ERROR, "%s", "Type mismatch");
+        throw_error_fatal(FUNCTION_DEFINITION_ERROR, "%s", "Type mismatch");
 
     data->returned = true;
     /** Return in main is treated differently then in functions */
@@ -683,7 +677,7 @@ void ruleCallParamsN(ParserData *data, Vector *names, Vector *types) {
     if(ruleValues(data, names, types)) {
         ruleCallParamsN(data, names, types);
     } else {
-        throw_error_parser(data, SYNTAX_ERROR, "Expected VALUE, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected VALUE, got token type %d", data->token.type);
     }
 }
 
@@ -695,11 +689,11 @@ bool ruleValues(ParserData *data, Vector *names, Vector *types) {
     else {
         if(data->token.type == TOKEN_IDENTIFIER) {
             if(string_compare(&data->token.value.s, "_"))
-                throw_error_parser(data, DEFINITION_ERROR, "%s", "Cannot use _ in function call");
+                throw_error_fatal(DEFINITION_ERROR, "%s", "Cannot use _ in function call");
 
             htab_t *scope = getSymTableForVar(data->scopes, data->token.value.s.ptr);
             if(scope == NULL)
-                throw_error_parser(data, DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
+                throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", data->token.value.s.ptr);
 
             vectorPush(names, (void *) data->token.value.s.ptr);
             addFuncType(types, getVarType(scope, data->token.value.s.ptr));
@@ -729,16 +723,16 @@ void ruleForDef(ParserData *data) {
     Token id = data->token;
     
     if(!load_and_compare(data, TOKEN_DECLARATION, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_DECLARATION, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_DECLARATION, got token type %d", data->token.type);
 
     if(string_compare(&id.value.s, "_")) 
-        throw_error_parser(data, OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
+        throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Can not define variable with name _");
 
     expResult result = ruleExp(data, false, false);
     htab_t *exp_scope = getSymTableForVar(data->scopes, result.result.ptr);
 
     if(getVarType(exp_scope, result.result.ptr) == BOOL)
-        throw_error_parser(data, TYPE_DEFINITION_ERROR, "%s", "Bool variable declaration not supported");
+        throw_error_fatal(TYPE_DEFINITION_ERROR, "%s", "Bool variable declaration not supported");
 
     TokenValue value;
     if(isVarConst(exp_scope, result.result.ptr))
@@ -766,7 +760,7 @@ void ruleForAssign(ParserData *data) {
     ruleIdN(data, lnames);
 
     if(!load_and_compare(data, TOKEN_ASSIGNMENT, false))
-        throw_error_parser(data, SYNTAX_ERROR, "Expected TOKEN_ASSIGNMENT, got token type %d", data->token.type);
+        throw_error_fatal(SYNTAX_ERROR, "Expected TOKEN_ASSIGNMENT, got token type %d", data->token.type);
 
     /** Get types of loaded variables */
     for(unsigned i = 0; i < lnames->length; i++) {
@@ -776,7 +770,7 @@ void ruleForAssign(ParserData *data) {
         } else {
             htab_t *scope = getSymTableForVar(data->scopes, name);
             if(scope == NULL)
-                throw_error_parser(data, DEFINITION_ERROR, "Variable %s not defined", name);
+                throw_error_fatal(DEFINITION_ERROR, "Variable %s not defined", name);
 
             addFuncType(ltypes, getVarType(scope, name));
         }
@@ -792,7 +786,7 @@ void ruleForAssign(ParserData *data) {
     ruleExpN(data, rnames, rtypes);
 
     if(!checkTypes(ltypes, rtypes))
-        throw_error_parser(data, OTHER_SEMANTIC_ERROR, "%s", "Type mismatch");
+        throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Type mismatch");
 
     for(unsigned i = 0; i < lnames->length; i++) {
         char *target_name = (char *) vectorGet(lnames, i);
@@ -820,10 +814,10 @@ expResult ruleExp(ParserData *data, bool allowEmpty, bool allowFunc) {
     expResult result = expression(data->scopes, data->table);
 
     if(!allowEmpty && result.isEmpty)
-        throw_error_parser(data, SYNTAX_ERROR, "%s", "Expected non-empty expression, got empty");
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Expected non-empty expression, got empty");
 
     if(!allowFunc && result.isFunc)
-        throw_error_parser(data, SYNTAX_ERROR, "%s", "Expected expression, got func");
+        throw_error_fatal(SYNTAX_ERROR, "%s", "Expected expression, got func");
 
     /** Add string to vector of allocated string so we can free them later */
     if(result.newToken.type == TOKEN_STRING || result.newToken.type == TOKEN_IDENTIFIER)
