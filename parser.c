@@ -585,7 +585,7 @@ void ruleStatBody(ParserData *data, Token id) {
             ruleExpN(data, rnames, rtypes);
 
             if(!checkTypes(ltypes, rtypes))
-                throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Type mismatch");
+                throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Type mismatch");
 
             for(unsigned i = 0; i < lnames->length; i++) {
                 char *target_name = (char *) vectorGet(lnames, i);
@@ -786,7 +786,7 @@ void ruleForAssign(ParserData *data) {
     ruleExpN(data, rnames, rtypes);
 
     if(!checkTypes(ltypes, rtypes))
-        throw_error_fatal(OTHER_SEMANTIC_ERROR, "%s", "Type mismatch");
+        throw_error_fatal(INCOMPATIBLE_EXPRESSION_ERROR, "%s", "Type mismatch");
 
     for(unsigned i = 0; i < lnames->length; i++) {
         char *target_name = (char *) vectorGet(lnames, i);
